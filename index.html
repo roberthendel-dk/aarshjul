@@ -126,7 +126,7 @@ table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-bl
 <body>
 <div class="app">
 <aside class="side">
-  <div class="brand"><svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><g fill="none" stroke-width="6"><path d="M17 4a13 13 0 0 1 13 13" stroke="#7fa9d6"/><path d="M30 17a13 13 0 0 1-13 13" stroke="#86c76b"/><path d="M17 30A13 13 0 0 1 4 17" stroke="#e9bd4c"/><path d="M4 17A13 13 0 0 1 17 4" stroke="#e38a52"/></g><path d="M17 17 25 8" stroke="#ff7a57" stroke-width="2.2" stroke-linecap="round"/><circle cx="17" cy="17" r="2.4" fill="#fff"/></svg><div><b>Redaktionens hukommelse</b><span>Version 2.2 | Udviklet af RH 🤓</span></div></div>
+  <div class="brand"><svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><g fill="none" stroke-width="6"><path d="M17 4a13 13 0 0 1 13 13" stroke="#7fa9d6"/><path d="M30 17a13 13 0 0 1-13 13" stroke="#86c76b"/><path d="M17 30A13 13 0 0 1 4 17" stroke="#e9bd4c"/><path d="M4 17A13 13 0 0 1 17 4" stroke="#e38a52"/></g><path d="M17 17 25 8" stroke="#ff7a57" stroke-width="2.2" stroke-linecap="round"/><circle cx="17" cy="17" r="2.4" fill="#fff"/></svg><div><b>Redaktionens hukommelse</b><span>Version 2.3 | Udviklet af RH 🤓</span></div></div>
   <nav class="nav" id="nav"></nav>
   <button class="sync warn" id="sync" title="Dropbox-indstillinger: filsti og forbindelse">Forbinder…</button>
 </aside>
@@ -249,9 +249,6 @@ const KINDS={
  accreditation:{one:'akkreditering',view:'akkrediteringer',label:'Akkrediteringer',prefix:'AKK',name:e=>e.event,
   fields:[['event','Arrangement','text',0,1],['type','Type','select',['Kultur','Sport','Festival','Koncert','Kamp','Andet']],['area','Område','text'],['opens','Åbner','date'],['deadline','Frist','date',0,1],['status','Status','select',['Ikke ansøgt','Ansøgt','Godkendt','Afvist']],['applicant','Ansøgt af','text'],['contact','Pressekontakt','text'],['link','Ansøgningslink','url'],['rules','Foto- og videoregler','textarea']],
   cols:[['deadline','Frist','d'],['event','Arrangement','b'],['type','Type'],['status','Status'],['applicant','Ansøgt af'],['_link','Link']],sort:'deadline'},
- sporttag:{one:'sportstag',view:'sport',label:'Sportstags',prefix:'TAG',name:e=>e.name,
-  fields:[['name','Klub eller tag','text',0,1],['sport','Sportsgren','text'],['type','Type','select',['Klub','Turnering','Liga','Sportsgren','Hjemmekamp','Udekamp','Derby','Andet']],['area','Område','text']],
-  cols:[['name','Navn','b'],['sport','Sportsgren'],['type','Type'],['area','Område']]},
  followup:{one:'opfølgning',view:'opfoelgninger',label:'Opfølgninger',prefix:'OPF',name:e=>e.title,
   fields:[['title','Titel','text',0,1],['date','Planlagt dato','date',0,1],['interval','Interval','select',['3 måneder','6 måneder','1 år','2 år','3 år','5 år','10 år','Egen dato']],['trigger','Udløserdato','date'],['status','Status','select',['Skal vurderes','Skal planlægges','Under arbejde','Udgivet','Droppet']],['priority','Prioritet','select',PRI],['sourceType','Kildetype','text'],['sourceId','Kilde-ID','text'],['angle','Forslag til vinkel','textarea']],
   cols:[['date','Dato','d'],['title','Titel','b'],['interval','Interval'],['status','Status'],['priority','Prioritet']],sort:'date'},
@@ -559,8 +556,6 @@ const SHEETS=[
   e=>({'Mærkedag-ID':e.id,Begivenhed:e.title,'Oprindelig dato':e.date,'Sted/område':e.area,Beskrivelse:e.description,'Mulig vinkel':e.angle,Jubilæumsår:e.marks,'Vis hvert år':e.annual,Status:e.status,Prioritet:e.priority})],
  ['accreditation','Akkrediteringer',['Akkrediteringer'],r=>({id:pk(r,'Akkrediterings-ID','Akkrediterings ID','ID'),event:pk(r,'Arrangement','Begivenhed'),type:pk(r,'Type'),area:pk(r,'Område'),opens:xd(pk(r,'Åbner dato','Åbner')),deadline:xd(pk(r,'Frist','Akkrediteringsfrist')),status:pk(r,'Status')||'Ikke ansøgt',applicant:pk(r,'Ansøgt af'),link:pk(r,'Ansøgningslink','Link'),contact:pk(r,'Pressekontakt'),rules:pk(r,'Foto-/videoregler')}),
   e=>({'Akkrediterings-ID':e.id,Arrangement:e.event,Type:e.type,Område:e.area,'Åbner dato':e.opens,Frist:e.deadline,Status:e.status,'Ansøgt af':e.applicant,Ansøgningslink:e.link,Pressekontakt:e.contact,'Foto-/videoregler':e.rules})],
- ['sporttag','Tags',['Tags','Sportstags'],r=>({id:pk(r,'Tag-ID','Tag ID','ID'),name:pk(r,'Navn'),sport:pk(r,'Sportsgren'),type:pk(r,'Type'),area:pk(r,'Område')}),
-  e=>({'Tag-ID':e.id,Navn:e.name,Sportsgren:e.sport,Type:e.type,Område:e.area})],
  ['story','Historier',['Historier'],r=>({id:pk(r,'Historie-ID','Historie ID','ID'),title:pk(r,'Rubrik','Titel'),date:xd(pk(r,'Udgivelsesdato','Dato')),journalist:pk(r,'Journalist'),platform:pk(r,'Medie/platform','Platform'),url:pk(r,'URL','Link'),itemId:pk(r,'Punkt-ID','Punkt ID'),year:String(pk(r,'År')),note:pk(r,'Kort note/vinkel','Note','Vinkel')}),
   e=>({'Historie-ID':e.id,Rubrik:e.title,Udgivelsesdato:e.date,Journalist:e.journalist,'Medie/platform':e.platform,URL:e.url,'Kort note/vinkel':e.note,År:e.year,'Punkt-ID':e.itemId})],
  ['followup','Opfølgninger',['Opfølgninger'],r=>({id:pk(r,'Opfølgnings-ID','Opfølgnings ID','ID'),sourceType:pk(r,'Kilde type'),sourceId:pk(r,'Kilde ID'),title:pk(r,'Titel'),trigger:xd(pk(r,'Udløserdato')),interval:pk(r,'Interval'),date:xd(pk(r,'Planlagt dato','Dato')),angle:pk(r,'Forslag til vinkel','Vinkel'),status:pk(r,'Status')||'Skal vurderes',priority:pk(r,'Prioritet')||'Mellem'}),
