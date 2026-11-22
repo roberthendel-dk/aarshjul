@@ -5,98 +5,133 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Redaktionelt Årshjul</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
-/* VOICE: avisens planlægningstavle – nøgtern, tæt og hurtig at skimme til morgenmødet
-   IDEA: den trykte redaktionskalender, der hænger på væggen ved desken
-   PICTURE: et rigtigt årshjul – tolv månedssegmenter, prikker pr. type i ringe, rød nål for i dag
-   COLOUR and TYPE: hvidt papir, sort tryksværte, avisrød som eneste accent; Archivo 800 + Archivo
-   LAYOUT: sort spalte med navigation, tavle med tidshorisonter, hjulet stort med månedens liste ved siden af */
-:root{color-scheme:light dark;--bg:light-dark(#fff,#121212);--panel:light-dark(#f3f3f1,#1d1d1d);--panel2:light-dark(#e8e8e5,#2a2a2a);--ink:light-dark(#111,#ececec);--muted:light-dark(#5d5d5d,#a5a5a5);--line:light-dark(#dadad6,#343434);--red:light-dark(#d42a1e,#ff5b48);--side:#111;--c-event:var(--red);--c-org:light-dark(#0c7a6d,#3fc8b6);--c-person:light-dark(#2f55d4,#86a2ff);--c-mark:light-dark(#946600,#e2b24c);--c-deadline:light-dark(#111,#f0f0f0)}
+/* VOICE: rolig, venlig arbejdsflade til morgenmødet – hurtig at skimme, rød kun når noget haster
+   IDEA: årshjulet med årstider – hver måned bærer sin årstidsfarve i hjulet og i datofelterne
+   PICTURE: hjulet med årstidsringe og nål for i dag; datofelter tonet efter måned
+   COLOUR and TYPE: kølig papirhvid, fjordblå spalte, blæk #1c2733; årstider vinter/forår/sommer/efterår; Schibsted Grotesk
+   LAYOUT: fast spalte, topbar med dato og uge, tavle i fire tidshorisonter, paneler kun hvor de grupperer */
+:root{color-scheme:light dark;
+--bg:light-dark(#f4f5f2,#14191e);--surface:light-dark(#fff,#1b2229);--panel:light-dark(#eef0ec,#222a32);--panel2:light-dark(#e4e7e2,#2b343d);
+--ink:light-dark(#1c2733,#e6ebef);--muted:light-dark(#5b6875,#9aa7b3);--line:light-dark(#dfe3df,#2e3842);
+--side:light-dark(#17343a,#0f2226);--side-ink:#e4eeec;--side-mute:#9fb8b4;--side-hi:light-dark(#21474f,#1a383e);
+--red:light-dark(#c73e1d,#ff7a57);--red-soft:light-dark(#fbece6,#3a211b);--blue:light-dark(#2f5fd0,#8eaaff);--blue-soft:light-dark(#eaf0fd,#1f2a45);--green:light-dark(#2e7d5b,#5fd0a0);--green-soft:light-dark(#e6f3ec,#173328);
+--winter:light-dark(#5f8fbf,#7fa9d6);--spring:light-dark(#5f9e45,#86c76b);--summer:light-dark(#d9a21f,#e9bd4c);--autumn:light-dark(#cc6a2e,#e38a52);
+--c-event:var(--red);--c-org:var(--green);--c-person:var(--blue);--c-mark:light-dark(#8a6a12,#d8b452);--c-deadline:var(--ink);
+--on:light-dark(#fff,#14191e);--r:14px;--shadow:0 1px 2px rgb(20 30 40/.06),0 4px 16px rgb(20 30 40/.05)}
 :root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
 *{box-sizing:border-box;min-width:0}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Archivo,system-ui,sans-serif;overflow-x:clip}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Schibsted Grotesk",system-ui,sans-serif;overflow-x:clip;-webkit-font-smoothing:antialiased}
 button,input,select,textarea{font:inherit;color:inherit}
-h1,h2,h3{font-weight:800;line-height:1.05;margin:0;text-wrap:balance}
-.app{display:grid;grid-template-columns:236px minmax(0,1fr);min-height:100vh}
-.side{background:var(--side);color:#f2f2f2;padding:22px 14px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:18px}
-.brand{padding:0 10px}.brand b{display:block;font-size:22px;font-weight:800;line-height:1.05}.brand span{color:#9b9b9b;font-size:13px}
-.nav{display:grid;gap:2px}.nav a{display:flex;justify-content:space-between;align-items:center;gap:8px;color:#d8d8d8;text-decoration:none;padding:10px;border-radius:6px;min-height:40px;font-size:15px}
-.nav a:hover{background:#222}.nav a.on{background:#fff;color:#111;font-weight:700}.nav a.on i{color:var(--red)}.nav i{font-style:normal;font-size:13px;color:#8a8a8a}
-.sync{margin-top:auto;background:none;border:0;border-top:1px solid #2a2a2a;text-align:left;cursor:pointer;width:100%;font-size:13px;color:#a9a9a9;padding:10px;border-top:1px solid #2a2a2a;display:flex;gap:8px;align-items:flex-start}.sync::before{content:"";flex:none;width:8px;height:8px;margin-top:6px;border-radius:50%;background:#3fc8b6}.sync.warn::before{background:#ffb02e}.sync.bad::before{background:#ff5b48}
-.top{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:2px solid var(--ink);padding:14px clamp(16px,3vw,36px);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
-.top h1{font-size:clamp(24px,3vw,34px)}
-.acts{display:flex;flex-wrap:wrap;gap:8px}
-.btn{min-height:44px;padding:0 16px;border:1.5px solid var(--ink);background:var(--bg);border-radius:6px;cursor:pointer;font-weight:600;white-space:nowrap}
-.btn:hover{background:var(--panel)}.btn.pri{background:var(--red);border-color:var(--red);color:#fff}.btn.pri:hover{filter:brightness(1.08)}
-.btn.ok{border-color:var(--c-org);color:var(--c-org)}.btn[aria-busy=true]{opacity:.7;cursor:progress}.btn.ghost{border-color:var(--line)}.btn.danger{border-color:var(--red);color:var(--red)}.btn.danger.arm{background:var(--red);color:#fff}
-:focus-visible{outline:3px solid var(--red);outline-offset:2px}
-.wrap{padding:clamp(16px,3vw,36px);max-width:1400px}
+h1,h2,h3{font-weight:700;line-height:1.1;margin:0;text-wrap:balance;letter-spacing:-.01em}
+.app{display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh}
+.side{background:var(--side);color:var(--side-ink);padding:22px 14px 16px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:22px}
+.brand{display:flex;gap:11px;align-items:center;padding:0 8px}.brand svg{flex:none}.brand b{display:block;font-size:17px;font-weight:800;line-height:1.15}.brand span{color:var(--side-mute);font-size:13px}
+.nav{display:grid;gap:1px}.nav a{display:flex;justify-content:space-between;align-items:center;gap:8px;color:var(--side-ink);text-decoration:none;padding:9px 10px;border-radius:9px;min-height:40px;font-size:15px;opacity:.86}
+.nav a:hover{background:var(--side-hi);opacity:1}.nav a.on{background:#fff;color:#17343a;font-weight:700;opacity:1}.nav i{font-style:normal;font-size:12px;color:var(--side-mute);font-variant-numeric:tabular-nums}.nav a.on i{color:#17343a}
+.nav a:nth-child(2){margin-bottom:10px}
+.sync{margin-top:auto;font-size:13px;color:var(--side-mute);padding:10px;border:0;border-radius:9px;background:none;text-align:left;cursor:pointer;width:100%;display:flex;gap:8px;align-items:flex-start}.sync:hover{background:var(--side-hi);color:var(--side-ink)}
+.sync::before{content:"";flex:none;width:8px;height:8px;margin-top:6px;border-radius:50%;background:#5fd0a0}.sync.warn::before{background:#e9bd4c}.sync.bad::before{background:#ff7a57}
+.top{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:14px clamp(16px,3vw,36px);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
+.top h1{font-size:clamp(24px,2.6vw,30px);font-weight:800}.top p{margin:2px 0 0;color:var(--muted);font-size:14px}
+.acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{min-height:42px;padding:0 15px;border:1px solid var(--line);background:var(--surface);border-radius:10px;cursor:pointer;font-weight:600;white-space:nowrap;font-size:15px}
+.btn:hover{border-color:var(--muted)}
+.btn.pri{background:var(--ink);border-color:var(--ink);color:var(--surface)}.btn.pri:hover{opacity:.9}
+.btn.plan{background:var(--blue);border-color:var(--blue);color:var(--on)}.btn.ok{color:var(--green);border-color:color-mix(in srgb,var(--green) 40%,var(--line));background:var(--green-soft)}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}.btn.ghost:hover{background:var(--panel);color:var(--ink)}
+.btn.danger{border-color:var(--red);color:var(--red);background:var(--surface)}.btn.danger.arm{background:var(--red);color:var(--on)}
+#dDel,#sOff{min-width:0}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.wrap{padding:clamp(16px,3vw,32px) clamp(16px,3vw,36px) 48px;max-width:1440px}
 .view{display:none}.view.on{display:block}
-.lede{font-size:clamp(26px,3.4vw,44px);max-width:22ch;margin-bottom:18px}.lede em{font-style:normal;color:var(--red)}
-.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--ink);border-bottom:1px solid var(--line);margin-bottom:22px}
-.kpi{padding:14px 16px 14px 0}.kpi+.kpi{padding-left:16px;border-left:1px solid var(--line)}.kpi b{display:block;font-size:clamp(28px,3vw,40px);font-weight:800;line-height:1}.kpi span{font-size:14px;color:var(--muted)}
+.lede{font-size:clamp(24px,2.8vw,34px);font-weight:800;max-width:30ch;margin:4px 0 18px}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;margin-bottom:22px;background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow)}
+.kpi{padding:16px 20px}.kpi+.kpi{border-left:1px solid var(--line)}.kpi b{display:block;font-size:clamp(28px,3vw,38px);font-weight:800;line-height:1;font-variant-numeric:tabular-nums}.kpi span{font-size:14px;color:var(--muted)}
+.kpi:nth-child(2) b,.kpi:nth-child(4) b{color:var(--red)}
 .filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;align-items:center}
-.inp{min-height:44px;border:1.5px solid var(--line);border-radius:6px;background:var(--bg);padding:0 12px;font-size:16px}
+.inp{min-height:42px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:0 12px;font-size:16px}
+.inp:hover{border-color:var(--muted)}
 textarea.inp{padding:10px 12px;min-height:96px;resize:vertical;width:100%}
-.horizon{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;margin-bottom:28px}
-.col h3,.panel h3{font-size:17px;padding-bottom:8px;border-bottom:3px solid var(--ink);margin-bottom:4px;display:flex;justify-content:space-between;gap:8px}
-.col h3 small,.panel h3 small{font-weight:500;color:var(--muted);font-size:14px}
-.col.now h3{border-color:var(--red);color:var(--red)}
-.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px;margin-bottom:28px}
-.row{display:grid;grid-template-columns:48px minmax(0,1fr);gap:10px;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:10px 2px;cursor:pointer;align-items:start}
-.row:hover{background:var(--panel)}
-.dt{text-align:center;line-height:1;padding-top:2px}.dt b{display:block;font-size:22px;font-weight:800}.dt span{font-size:12px;color:var(--muted)}
-.dt i{display:block;width:8px;height:8px;border-radius:50%;margin:6px auto 0}
-.rt .t{display:block;font-weight:700;line-height:1.25}.rt .m{display:block;font-size:13px;color:var(--muted);margin-top:3px}
-.pill{display:inline-block;font-size:12px;font-weight:700;padding:1px 7px;border-radius:99px;background:var(--panel2);color:var(--ink);margin-right:4px}.pill.red{background:var(--red);color:#fff}
-.empty{color:var(--muted);font-size:14px;padding:14px 2px}
-.wheel{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:clamp(18px,3vw,40px);align-items:start}
-.fig{position:relative;aspect-ratio:1;width:100%;max-width:680px}.fig>svg{position:absolute;inset:0;width:100%;height:100%}
-.fig svg .seg{cursor:pointer}.fig svg .dot{cursor:pointer}
-.yearnav{display:flex;align-items:center;gap:10px;margin-bottom:12px}.yearnav b{font-size:28px;font-weight:800;min-width:3.2ch;text-align:center}
-.months{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;margin-bottom:14px}
-.months button{min-height:40px;border:1px solid var(--line);background:var(--bg);border-radius:5px;cursor:pointer;font-size:14px}.months button.on{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:700}
+.horizon{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:26px;align-items:start}
+.col,.panel{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);padding:6px 14px 8px}
+.col.now{background:var(--red-soft);box-shadow:none;border:1px solid color-mix(in srgb,var(--red) 25%,transparent)}
+.col h3,.panel h3{font-size:16px;padding:12px 2px 10px;display:flex;justify-content:space-between;align-items:baseline;gap:8px;border-bottom:1px solid var(--line)}
+.col.now h3{color:var(--red);border-color:color-mix(in srgb,var(--red) 25%,transparent)}
+.col h3 small,.panel h3 small{font-weight:500;color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:16px;align-items:start}
+.row{display:grid;grid-template-columns:46px minmax(0,1fr);gap:12px;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:11px 4px;cursor:pointer;align-items:start;border-radius:0}
+.col .row:last-child,.panel .row:last-child,#mList .row:last-child{border-bottom:0}
+.row:hover{background:color-mix(in srgb,var(--panel) 70%,transparent);border-radius:10px}
+.dt{display:grid;place-items:center;width:46px;height:50px;border-radius:10px;background:color-mix(in srgb,var(--season) 16%,var(--surface));color:var(--ink);line-height:1;align-content:center;gap:3px;border:1px solid color-mix(in srgb,var(--season) 30%,transparent)}
+.dt b{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums}.dt span{font-size:11px;color:color-mix(in srgb,var(--season) 55%,var(--ink));font-weight:600}
+.rt .t{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;font-weight:700;line-height:1.3}
+.rt .m{display:flex;flex-wrap:wrap;gap:2px 12px;font-size:13px;color:var(--muted);margin-top:3px}
+.rt .m i{font-style:normal;display:inline-flex;align-items:center;gap:5px}.rt .m i:first-child::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--dot)}
+.pill{display:inline-block;font-size:11.5px;font-weight:700;padding:1px 7px;border-radius:6px;background:var(--panel2);color:var(--ink);line-height:1.6}.pill.red{background:var(--red);color:var(--on)}
+.empty{color:var(--muted);font-size:14px;padding:14px 4px}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.chip{font-size:12px;font-weight:600;padding:2px 8px;border-radius:6px;background:var(--panel);color:var(--muted);line-height:1.5;max-width:100%}
+.chip.st{background:transparent;border:1px solid var(--line);color:var(--ink);font-weight:500}.chip.plan{background:var(--blue-soft);color:var(--blue)}.chip.ok{background:var(--green-soft);color:var(--green)}.chip.warn{background:var(--red-soft);color:var(--red)}
+.wheel{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:clamp(18px,3vw,36px);align-items:start}
+.wheelcard{background:var(--surface);border-radius:20px;box-shadow:var(--shadow);padding:clamp(10px,2vw,24px)}
+.fig{position:relative;aspect-ratio:1;width:100%;max-width:660px;margin:auto}.fig>svg{position:absolute;inset:0;width:100%;height:100%}
+.fig svg .seg{cursor:pointer;transition:opacity .15s}.fig svg .seg:hover{opacity:.85}.fig svg .dot{cursor:pointer}
+.yearnav{display:flex;align-items:center;gap:8px;margin-bottom:12px}.yearnav b{font-size:28px;font-weight:800;min-width:3.2ch;text-align:center;font-variant-numeric:tabular-nums}
+.months{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px;margin-bottom:14px}
+.months button{min-height:38px;border:1px solid transparent;background:color-mix(in srgb,var(--season) 13%,var(--surface));border-radius:8px;cursor:pointer;font-size:14px;font-weight:600}
+.months button:hover{border-color:var(--season)}.months button.on{background:var(--season);color:var(--on)}
 .legend{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
-.legend button{display:flex;align-items:center;gap:6px;min-height:36px;border:1px solid var(--line);background:var(--bg);border-radius:99px;padding:0 12px;cursor:pointer;font-size:14px}
-.legend button i{width:10px;height:10px;border-radius:50%}.legend button.off{opacity:.4;text-decoration:line-through}
-.mhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;border-bottom:3px solid var(--ink);padding-bottom:8px}.mhead h2{font-size:30px;text-transform:capitalize}
+.legend button{display:flex;align-items:center;gap:7px;min-height:34px;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:0 11px;cursor:pointer;font-size:13.5px}
+.legend button i{width:9px;height:9px;border-radius:50%}.legend button.off{opacity:.45;text-decoration:line-through}
+.monthcard{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);padding:4px 14px 8px}
+.mhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:14px 2px 10px;border-bottom:1px solid var(--line)}.mhead h2{font-size:24px;font-weight:800}.mhead h2::first-letter{text-transform:uppercase}
+.regcard{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);padding:4px 16px;overflow:hidden}
 .table{width:100%;border-collapse:collapse;font-size:15px}
-.table th{text-align:left;font-size:13px;color:var(--muted);font-weight:600;border-bottom:2px solid var(--ink);padding:8px 10px 8px 0}
-.table td{border-bottom:1px solid var(--line);padding:10px 10px 10px 0;vertical-align:top}
-.table tbody tr{cursor:pointer}.table tbody tr:hover{background:var(--panel)}
-.table td.d{white-space:nowrap}.table td:first-child b{font-weight:700}
-.table a{color:var(--red)}
-.scrim{position:fixed;inset:0;background:rgb(0 0 0/.35);z-index:20;opacity:0;pointer-events:none;transition:opacity .2s}.scrim.on{opacity:1;pointer-events:auto}
-.drawer{position:fixed;top:0;right:0;bottom:0;width:min(560px,100%);background:var(--bg);z-index:21;transform:translateX(102%);transition:transform .22s;display:flex;flex-direction:column;border-left:2px solid var(--ink)}
+.table th{text-align:left;font-size:13px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--line);padding:12px 12px 10px 0}
+.table td{border-bottom:1px solid var(--line);padding:12px 12px 12px 0;vertical-align:top}
+.table tbody tr:last-child td{border-bottom:0}
+.table tbody tr{cursor:pointer}.table tbody tr:hover td{background:color-mix(in srgb,var(--panel) 60%,transparent)}
+.table td.d{white-space:nowrap;font-variant-numeric:tabular-nums}.table td b{font-weight:700}
+.table .chips{margin-top:0}.table a{color:var(--blue);font-weight:600}
+.scrim{position:fixed;inset:0;background:rgb(10 20 30/.35);z-index:20;opacity:0;pointer-events:none;transition:opacity .2s}.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(580px,100%);background:var(--bg);z-index:21;transform:translateX(102%);transition:transform .25s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;box-shadow:-20px 0 50px rgb(10 20 30/.18)}
 .drawer.on{transform:none}
-.dh{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:18px 20px;border-bottom:1px solid var(--line)}.dh h2{font-size:24px}
+.dh{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:16px 20px;background:var(--surface);border-bottom:1px solid var(--line)}.dh h2{font-size:21px;font-weight:800}
 .db{padding:18px 20px;overflow:auto;flex:1}
-.df{display:flex;justify-content:space-between;gap:8px;padding:14px 20px;border-top:1px solid var(--line);flex-wrap:wrap}
-.form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px}
-.fld{display:grid;gap:5px;align-content:start}.fld.full{grid-column:1/-1}.fld label{font-size:13px;font-weight:700;color:var(--muted)}.fld label b{color:var(--red)}
-.fld .inp{width:100%}.yr{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) 44px;gap:6px;align-items:center;margin-bottom:6px}.yr .btn{padding:0}.cov{margin-bottom:22px}.formh{font-size:17px;padding-bottom:8px;border-bottom:3px solid var(--ink);margin-bottom:12px}.chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}.chip{font-size:12px;font-weight:600;padding:1px 8px;border-radius:99px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}.chip.plan{border-color:var(--c-person);color:var(--c-person)}.chip.ok{border-color:var(--c-org);color:var(--c-org)}.chip.warn{border-color:var(--red);color:var(--red)}.cov h3{font-size:17px;padding-bottom:8px;border-bottom:3px solid var(--ink);display:flex;gap:8px}.cov h3 small{color:var(--muted);font-weight:500}.covr{display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--line)}.covr .row{border:0;flex:1}.covr a{color:var(--red);font-weight:600;padding:0 6px}.cov>.btn{margin-top:10px}.fh{font-size:13px;color:var(--muted);line-height:1.35}
+.df{display:flex;justify-content:space-between;gap:8px;padding:12px 20px;background:var(--surface);border-top:1px solid var(--line);flex-wrap:wrap}
+.form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;background:var(--surface);border-radius:var(--r);padding:16px;box-shadow:var(--shadow)}
+.fld{display:grid;gap:5px;align-content:start}.fld.full{grid-column:1/-1}.fld label{font-size:13px;font-weight:600;color:var(--muted)}.fld label b{color:var(--red)}
+.fld .inp{width:100%}.fh{font-size:12.5px;color:var(--muted);line-height:1.4}
+.yr{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) 42px;gap:6px;align-items:center;margin-bottom:6px}.yr .btn{padding:0}
 .hint{font-size:13px;color:var(--muted);margin-top:14px}
-.toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:6px;z-index:40;opacity:0;pointer-events:none;transition:.2s;max-width:90vw}.toast.on{opacity:1;transform:translate(-50%,0)}.toast.err{background:var(--red);color:#fff}
-.banner{border:1.5px solid var(--ink);border-left:6px solid var(--red);padding:12px 14px;margin-bottom:20px;display:none;font-size:15px}.banner.on{display:block}
-.imp table{width:100%;font-size:15px;border-collapse:collapse}.imp td{padding:6px 0;border-bottom:1px solid var(--line)}.imp td+td{text-align:right;font-weight:700}
-@media(max-width:1100px){.horizon{grid-template-columns:repeat(2,minmax(0,1fr))}.wheel{grid-template-columns:1fr}.fig{max-width:560px;margin:auto}}
-@media(max-width:860px){.app{grid-template-columns:1fr}.side{position:static;height:auto;padding:14px 12px;gap:10px}.nav{display:flex;overflow-x:auto;gap:4px;padding-bottom:4px}.nav a{flex:none}.nav i{display:none}.sync{margin:0;border:0;padding:0 10px}}
-@media(max-width:600px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.kpi:nth-child(3){border-left:0;padding-left:0}.horizon,.grid2,.form{grid-template-columns:1fr}.top{position:static}.months{grid-template-columns:repeat(4,minmax(0,1fr))}
-table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px;border-bottom:1px solid var(--line)}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:8em;text-align:start}.stack td::before{content:attr(data-l);float:inline-start;width:7.5em;margin-inline-start:-8em;color:var(--muted)}.stack td:empty{display:none}}
+.cov{background:var(--surface);border-radius:var(--r);padding:4px 14px 12px;box-shadow:var(--shadow);margin-bottom:14px}
+.cov h3{font-size:15px;padding:12px 2px 10px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:8px}.cov h3 small{color:var(--muted);font-weight:500}
+.covr{display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--line)}.covr:last-of-type{border-bottom:0}.covr .row{border:0;flex:1}.covr a{color:var(--blue);font-weight:600;padding:0 6px}
+.cov>.btn{margin-top:8px;min-height:38px;border-color:var(--line);color:var(--ink)}
+.formh{font-size:15px;color:var(--muted);font-weight:600;margin:20px 2px 8px}
+.toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);background:var(--ink);color:var(--surface);padding:12px 18px;border-radius:10px;z-index:40;opacity:0;pointer-events:none;transition:.2s;max-width:90vw;box-shadow:var(--shadow);font-weight:500}.toast.on{opacity:1;transform:translate(-50%,0)}.toast.err{background:var(--red);color:var(--on)}
+.banner{background:light-dark(#fdf6e3,#2e2716);color:light-dark(#6b5312,#e9cf8a);border-radius:10px;padding:10px 14px;margin-bottom:18px;display:none;font-size:14.5px}.banner.on{display:block}
+.imp table{width:100%;font-size:15px;border-collapse:collapse}.imp td{padding:8px 0;border-bottom:1px solid var(--line)}.imp td+td{text-align:right;font-weight:700}
+code{background:var(--panel)!important}
+@media(max-width:1180px){.horizon{grid-template-columns:repeat(2,minmax(0,1fr))}.wheel{grid-template-columns:1fr}.fig{max-width:540px}}
+@media(max-width:860px){.app{grid-template-columns:1fr}.side{position:static;height:auto;padding:12px;gap:10px}.brand{padding:0 4px}.nav{display:flex;overflow-x:auto;gap:4px;padding-bottom:4px}.nav a{flex:none}.nav a:nth-child(2){margin:0}.nav i{display:none}.sync{margin:0}}
+@media(max-width:600px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.kpi:nth-child(3){border-left:0}.kpi:nth-child(n+3){border-top:1px solid var(--line)}.horizon,.grid2,.form{grid-template-columns:1fr}.top{position:static}.months{grid-template-columns:repeat(4,minmax(0,1fr))}#btnImport,#btnExport{display:none}
+table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px;border-bottom:1px solid var(--line)}.stack td{display:flow-root;border:0!important;padding:3px 0;padding-inline-start:8em;text-align:start}.stack td::before{content:attr(data-l);float:inline-start;width:7.5em;margin-inline-start:-8em;color:var(--muted)}.stack td:empty{display:none}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
 <div class="app">
 <aside class="side">
-  <div class="brand"><b>Redaktionelt Årshjul</b><span>Redaktionens hukommelse</span></div>
+  <div class="brand"><svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><g fill="none" stroke-width="6"><path d="M17 4a13 13 0 0 1 13 13" stroke="#7fa9d6"/><path d="M30 17a13 13 0 0 1-13 13" stroke="#86c76b"/><path d="M17 30A13 13 0 0 1 4 17" stroke="#e9bd4c"/><path d="M4 17A13 13 0 0 1 17 4" stroke="#e38a52"/></g><path d="M17 17 25 8" stroke="#ff7a57" stroke-width="2.2" stroke-linecap="round"/><circle cx="17" cy="17" r="2.4" fill="#fff"/></svg><div><b>Redaktionelt Årshjul</b><span>Redaktionens hukommelse</span></div></div>
   <nav class="nav" id="nav"></nav>
   <button class="sync warn" id="sync" title="Dropbox-indstillinger: filsti og forbindelse">Forbinder…</button>
 </aside>
 <main>
-  <header class="top"><h1 id="vtitle">Overblik</h1>
+  <header class="top"><div><h1 id="vtitle">Overblik</h1><p id="vsub"></p></div>
     <div class="acts"><button class="btn" id="btnSave">Gem i Excel</button><button class="btn ghost" id="btnImport">Importér Excel</button><button class="btn ghost" id="btnExport">Eksportér Excel</button><button class="btn pri" id="btnNew">+ Opret</button></div>
   </header>
   <div class="wrap">
@@ -124,14 +159,14 @@ table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-bl
 
     <section class="view" id="v-aarshjul">
       <div class="wheel">
-        <div class="fig" id="fig"><svg id="wsvg" role="img" aria-label="Årshjul"></svg></div>
+        <div class="wheelcard"><div class="fig" id="fig"><svg id="wsvg" role="img" aria-label="Årshjul"></svg></div></div>
         <div>
           <div class="yearnav"><button class="btn ghost" id="yPrev" aria-label="Forrige år">‹</button><b id="yLbl"></b><button class="btn ghost" id="yNext" aria-label="Næste år">›</button><button class="btn ghost" id="yNow">I dag</button></div>
           <div class="months" id="mBtns"></div>
           <div class="legend" id="legend"></div>
           <input class="inp" id="wSearch" placeholder="Søg i årshjulet" style="width:100%;margin-bottom:14px">
-          <div class="mhead"><h2 id="mTitle"></h2><span class="hint" style="margin:0" id="mCount"></span></div>
-          <div id="mList"></div>
+          <div class="monthcard"><div class="mhead"><h2 id="mTitle"></h2><span class="hint" style="margin:0" id="mCount"></span></div>
+          <div id="mList"></div></div>
         </div>
       </div>
     </section>
@@ -356,10 +391,15 @@ function covChips(o){const c=covInfo(o);if(!c)return'';const out=[];
   if(c.st)out.push(`<span class="chip">${c.st} ${c.st===1?'artikel':'artikler'} fra tidligere</span>`);
   if(c.total)out.push(`<span class="chip ${c.done===c.total?'ok':'plan'}">${c.done===c.total?'✓ ':''}Dækning planlagt: ${c.done}/${c.total} opgaver færdige</span>`);
   else if(c.future)out.push('<span class="chip warn">Ingen dækning planlagt</span>');
-  return out.length?`<span class="chips">${out.join('')}</span>`:''}
-function row(o,flag){const[y,m,d]=parts(o.date);const g=GROUPS[o.group];
-  const meta=[o.guess?'skønnet dato':'',o.dur?`${span(o.date,o.end).replace(/ \d{4}$/,'')} · ${o.dur+1} dage`:'',o.type,o.area,o.status].filter(Boolean).map(esc).join(' · ');
-  return`<button class="row" data-key="${esc(o.key)}"${o.year?` data-y="${o.year}"`:''}><span class="dt"><b>${d}</b><span>${MS[m-1]}${y!==+today().slice(0,4)?' '+y:''}</span><i style="background:${g[1]}"></i></span><span class="rt"><span class="t">${flag?`<span class="pill red">${flag}</span>`:''}${running(o)?'<span class="pill red">I gang</span>':''}${o.rep?'<span class="pill" title="Årligt tilbagevendende">↻ Årlig</span>':''}${o.guess?'<span class="pill red" title="Datoen er et skøn ud fra sidste år. Skriv årets dato ind på punktet.">Dato?</span>':''}${o.priority==='Akut'?'<span class="pill red">Akut</span>':o.priority==='Høj'?'<span class="pill">Høj</span>':''}${esc(o.title)}</span><span class="m">${meta}</span>${covChips(o)}</span></button>`}
+  return out.join('')}
+const season=m=>m===12||m<3?'var(--winter)':m<6?'var(--spring)':m<9?'var(--summer)':'var(--autumn)';
+const WDS=['søn','man','tir','ons','tor','fre','lør'];
+const WDF={søn:'søndag',man:'mandag',tir:'tirsdag',ons:'onsdag',tor:'torsdag',fre:'fredag',lør:'lørdag'};
+function isoWeek(s){const t=new Date(utc(s));const day=(t.getUTCDay()+6)%7;t.setUTCDate(t.getUTCDate()-day+3);const f=new Date(Date.UTC(t.getUTCFullYear(),0,4));return 1+Math.round(((t-f)/864e5-3+((f.getUTCDay()+6)%7))/7)}
+function subtitle(){const t=today(),[y,m,d]=parts(t),w=WDF[WDS[new Date(utc(t)).getUTCDay()]];return`${w[0].toUpperCase()+w.slice(1)} ${d}. ${MON[m-1]} ${y}, uge ${isoWeek(t)}`}
+function row(o,flag){const[y,m,d]=parts(o.date);const g=GROUPS[o.group];const wd=WDS[new Date(Date.UTC(y,m-1,d)).getUTCDay()];
+  const meta=[o.type||GROUPS[o.group][0],o.dur?`${wd}. ${span(o.date,o.end).replace(/ \d{4}$/,'')}, ${o.dur+1} dage`:WDF[wd],o.guess?'skønnet dato':'',o.area].filter(Boolean).map(x=>`<i>${esc(x)}</i>`).join('');
+  return`<button class="row" data-key="${esc(o.key)}"${o.year?` data-y="${o.year}"`:''}><span class="dt" style="--season:${season(m)}"><b>${d}</b><span>${MS[m-1]}${y!==+today().slice(0,4)?' '+String(y).slice(2):''}</span></span><span class="rt"><span class="t">${flag?`<span class="pill red">${flag}</span>`:''}${running(o)?'<span class="pill red">I gang</span>':''}${o.rep?'<span class="pill" title="Årligt tilbagevendende">↻ Årlig</span>':''}${o.guess?'<span class="pill red" title="Datoen er et skøn ud fra sidste år. Skriv årets dato ind på punktet.">Dato?</span>':''}${o.priority==='Akut'?'<span class="pill red">Akut</span>':o.priority==='Høj'?'<span class="pill">Høj</span>':''}${esc(o.title)}</span><span class="m" style="--dot:${g[1]}">${meta}</span>${(()=>{const c=(o.status&&!(running(o)&&o.status==='I gang')?`<span class="chip st">${esc(o.status)}</span>`:'')+covChips(o);return c?`<span class="chips">${c}</span>`:''})()}</span></button>`}
 const fill=(id,html,empty='Intet her')=>{$(id).innerHTML=html.length?html.join(''):`<div class="empty">${empty}</div>`};
 
 function renderDash(){
@@ -374,7 +414,7 @@ function renderDash(){
   const bd=win(0,90).filter(o=>o.group==='person');
   $('#k30').textContent=win(0,30).length;$('#kAct').textContent=act.length+late.length;$('#kBday').textContent=bd.length;$('#kLate').textContent=late.length;
   const n30=win(0,30).length,na=act.length+late.length;
-  $('#lede').innerHTML=entries.size?`${n30} punkt${n30===1?'':'er'} de næste 30 dage – <em>${na} kræver handling</em>.`:'Årshjulet er tomt. Importér jeres Excel-fil eller opret det første punkt.';
+  $('#lede').innerHTML=entries.size?`${n30} punkt${n30===1?'':'er'} de næste 30 dage, og ${na} kræver handling.`:'Årshjulet er tomt. Importér jeres Excel-fil eller opret det første punkt.';
   const cap=(arr,n)=>arr.slice(0,n);
   fill('#lAct',[...late.map(o=>row(o,'Overskredet')),...cap(act,12-late.length).map(o=>row(o))],'Intet presserende');
   $('#cAct').textContent=na||'';
@@ -400,9 +440,9 @@ function renderWheel(){
   for(let m=1;m<=12;m++){
     const a1=ang(diff(iso(wYear,1,1),iso(wYear,m,1))/N),a2=ang(diff(iso(wYear,1,1),m===12?iso(wYear+1,1,1):iso(wYear,m+1,1))/N),am=(a1+a2)/2,on=m===wMonth;
     const cnt=os.filter(o=>overlaps(o,iso(wYear,m,1),iso(wYear,m,dim(wYear,m)))).length,[lx,ly]=P(.425,am),[cx,cy]=P(.378,am);
-    h+=`<path class="seg" data-m="${m}" d="${seg(.35,.47,a1,a2)}" style="fill:${on?'var(--ink)':'var(--panel)'};stroke:var(--bg);stroke-width:3"><title>${MON[m-1]}: ${cnt} punkter</title></path>`;
-    h+=`<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" pointer-events="none" style="fill:${on?'var(--bg)':'var(--ink)'};font-weight:800;font-size:${Math.max(12,S*.03)}px">${MS[m-1][0].toUpperCase()+MS[m-1].slice(1)}</text>`;
-    if(cnt)h+=`<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="middle" pointer-events="none" style="fill:${on?'var(--bg)':'var(--muted)'};font-size:${Math.max(11,S*.021)}px">${cnt}</text>`}
+    h+=`<path class="seg" data-m="${m}" d="${seg(.35,.47,a1,a2)}" style="fill:${on?season(m):`color-mix(in srgb,${season(m)} 22%,var(--surface))`};stroke:var(--surface);stroke-width:3"><title>${MON[m-1]}: ${cnt} punkter</title></path>`;
+    h+=`<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" pointer-events="none" style="fill:${on?'var(--on)':'var(--ink)'};font-weight:700;font-size:${Math.max(12,S*.03)}px">${MS[m-1][0].toUpperCase()+MS[m-1].slice(1)}</text>`;
+    if(cnt)h+=`<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="middle" pointer-events="none" style="fill:${on?'var(--on)':'var(--muted)'};font-size:${Math.max(11,S*.021)}px">${cnt}</text>`}
   const dr=Math.max(4,S*.011);
   for(const o of os){const col=GROUPS[o.group][1],tip=esc(span(o.date,o.end)+' – '+o.title);
     if(o.end){const ys=iso(wYear,1,1),f1=Math.max(0,diff(ys,o.date))+.15,f2=Math.min(N,diff(ys,o.end)+1)-.15,a1=ang(f1/N),a2=ang(f2/N),r=LANES[o.group],[x1,y1]=P(r,a1),[x2,y2]=P(r,a2);
@@ -413,7 +453,7 @@ function renderWheel(){
   h+=`<circle cx="${c}" cy="${c}" r="${S*.095}" style="fill:var(--bg);stroke:var(--ink);stroke-width:2"/><text x="${c}" y="${c-S*.008}" text-anchor="middle" dominant-baseline="middle" style="fill:var(--ink);font-weight:800;font-size:${S*.055}px">${wYear}</text><text x="${c}" y="${c+S*.042}" text-anchor="middle" style="fill:var(--muted);font-size:${Math.max(11,S*.02)}px">${os.length} punkter</text>`;
   svg.setAttribute('viewBox',`0 0 ${S} ${S}`);svg.innerHTML=h;
   $('#yLbl').textContent=wYear;
-  $('#mBtns').innerHTML=MS.map((m,i)=>`<button data-m="${i+1}" class="${i+1===wMonth?'on':''}">${m[0].toUpperCase()+m.slice(1)}</button>`).join('');
+  $('#mBtns').innerHTML=MS.map((m,i)=>`<button data-m="${i+1}" style="--season:${season(i+1)}" class="${i+1===wMonth?'on':''}">${m[0].toUpperCase()+m.slice(1)}</button>`).join('');
   $('#legend').innerHTML=Object.entries(GROUPS).map(([k,[l,col]])=>`<button data-g="${k}" class="${off.has(k)?'off':''}" aria-pressed="${!off.has(k)}"><i style="background:${col}"></i>${l}</button>`).join('');
   const ml=os.filter(o=>overlaps(o,iso(wYear,wMonth,1),iso(wYear,wMonth,dim(wYear,wMonth))));
   $('#mTitle').textContent=`${MON[wMonth-1]} ${wYear}`;$('#mCount').textContent=`${ml.length} punkt${ml.length===1?'':'er'}`;
@@ -431,19 +471,19 @@ function renderRegister(){
   const cell=(e,n,[f,,t])=>{
     if(f==='_date'){const d=n?n.date:e.date,dur=valid(e.end)&&e.end>e.date?diff(e.date,e.end):0;return esc(dur?span(d,addDays(d,dur)):fmt(d))}
     if(f==='_rep')return esc(repText(e));
-    if(f==='_cov'){const d=(n||e).date;if(!valid(d))return'';return covChips({kind:'item',key:keyOf(e),date:d,end:n?n.end:(valid(e.end)?e.end:''),year:n?.year,rep:isRep(e)})}
+    if(f==='_cov'){const d=(n||e).date;if(!valid(d))return'';const c=covChips({kind:'item',key:keyOf(e),date:d,end:n?n.end:(valid(e.end)?e.end:''),year:n?.year,rep:isRep(e)});return c?`<span class="chips">${c}</span>`:''}
     if(f==='_item'){if(!e.itemId)return'';const it=entries.get('item~'+safe(e.itemId));return esc(it?it.title:'(slettet punkt)')}
     if(f==='status'&&n&&n.year)return esc(n.status)+` <span class="fh">(${n.year})</span>`;
     if(f==='_next')return n?esc(kind==='person'?`${n.age} år · ${fmt(n.date)}`:`${n.years} år · ${fmt(n.date)}`):'';
     if(f==='_link'){const u=e.url||e.link;return/^https?:\/\//i.test(u||'')?`<a href="${esc(u)}" target="_blank" rel="noopener">Åbn</a>`:''}
     if(t==='d')return esc(fmt(e[f]));if(t==='b')return`<b>${esc(e[f])}</b>`;return esc(e[f])};
-  $('#rBody').innerHTML=rows.length?`<table class="table stack"><thead><tr>${K.cols.map(c=>`<th>${c[1]}</th>`).join('')}</tr></thead><tbody>${rows.map(({e,n})=>`<tr data-key="${esc(keyOf(e))}"${n&&n.year?` data-y="${n.year}"`:''} tabindex="0">${K.cols.map(c=>`<td class="${c[2]==='d'?'d':''}">${cell(e,n,c)}</td>`).join('')}</tr>`).join('')}</tbody></table><p class="hint">${rows.length} ${rows.length===1?K.one:(K.many||K.label.toLowerCase().replace(/^alle /,''))}</p>`
+  $('#rBody').innerHTML=rows.length?`<div class="regcard"><table class="table stack"><thead><tr>${K.cols.map(c=>`<th>${c[1]}</th>`).join('')}</tr></thead><tbody>${rows.map(({e,n})=>`<tr data-key="${esc(keyOf(e))}"${n&&n.year?` data-y="${n.year}"`:''} tabindex="0">${K.cols.map(c=>`<td class="${c[2]==='d'||c[0]==='_date'?'d':''}">${cell(e,n,c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div><p class="hint">${rows.length} ${rows.length===1?K.one:(K.many||K.label.toLowerCase().replace(/^alle /,''))}</p>`
     :`<div class="empty">${q?'Ingen match på søgningen.':`Ingen ${K.label.toLowerCase()} endnu. Opret den første, eller importér fra Excel.`}</div>`;
 }
 
 function renderNav(){$('#nav').innerHTML=VIEWS.map(([id,l,k])=>`<a href="#${id}" class="${id===curView?'on':''}">${l}${k?`<i>${all(k).length||''}</i>`:''}</a>`).join('')}
 function render(){countStories();renderNav();if(curView==='oversigt')renderDash();else if(curView==='aarshjul')renderWheel();else renderRegister()}
-function route(){if($('#drawer').classList.contains('on')){importList=null;closeEditor()}const h=location.hash.slice(1);curView=VIEWS.some(v=>v[0]===h)?h:'oversigt';const reg=!['oversigt','aarshjul'].includes(curView);
+function route(){$('#vsub').textContent=subtitle();if($('#drawer').classList.contains('on')){importList=null;closeEditor()}const h=location.hash.slice(1);curView=VIEWS.some(v=>v[0]===h)?h:'oversigt';const reg=!['oversigt','aarshjul'].includes(curView);
   document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on',v.id===(reg?'v-register':'v-'+curView)));
   $('#vtitle').textContent=VIEWS.find(v=>v[0]===curView)[1];if(reg){$('#rSearch').value='';$('#rSearch').placeholder='Søg i '+$('#vtitle').textContent.toLowerCase()}render()}
 
@@ -452,7 +492,7 @@ let editing=null;
 function linkedHtml(obj,year){const key=keyOf(obj),rep=isRep(obj),y=year||+obj.date.slice(0,4);
   const ts=tasksForOcc(key,y,rep).sort((a,b)=>(a.deadline||'9999').localeCompare(b.deadline||'9999'));
   const ls=(storiesBy[key]||[]).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
-  const dt=d=>`<span class="dt"><b>${valid(d)?+d.slice(8):'–'}</b><span>${valid(d)?MS[+d.slice(5,7)-1]+' '+d.slice(0,4):''}</span></span>`;
+  const dt=d=>`<span class="dt" style="--season:${valid(d)?season(+d.slice(5,7)):'var(--muted)'}"><b>${valid(d)?+d.slice(8):'–'}</b><span>${valid(d)?MS[+d.slice(5,7)-1]+(d.slice(0,4)!==today().slice(0,4)?' '+d.slice(2,4):''):''}</span></span>`;
   return`<div class="cov"><h3>Planlagt dækning${rep?' '+y:''} <small>${ts.length?ts.filter(t=>t.status==='Færdig').length+'/'+ts.length+' færdige':''}</small></h3>${ts.length?ts.map(t=>`<div class="covr"><button type="button" class="row" data-key="${esc(keyOf(t))}">${dt(t.deadline)}<span class="rt"><span class="t">${t.status==='Færdig'?'✓ ':''}${esc(t.task)}</span><span class="m">${esc([t.owner,t.status].filter(Boolean).join(' · '))}</span></span></button></div>`).join(''):'<div class="empty">Ingen opgaver endnu.</div>'}<button type="button" class="btn ghost" id="addTask">+ Tilføj opgave</button></div>
   <div class="cov"><h3>Tidligere dækning <small>${ls.length||''}</small></h3>${ls.length?ls.map(x=>`<div class="covr"><button type="button" class="row" data-key="${esc(keyOf(x))}">${dt(x.date)}<span class="rt"><span class="t">${esc(x.title)}</span><span class="m">${esc([x.journalist,x.platform].filter(Boolean).join(' · '))}</span></span></button>${/^https?:\/\//i.test(x.url||'')?`<a href="${esc(x.url)}" target="_blank" rel="noopener">Åbn</a>`:''}</div>`).join(''):'<div class="empty">Ingen artikler koblet på endnu.</div>'}<button type="button" class="btn ghost" id="addStory">+ Tilføj artikel</button></div><h3 class="formh">Oplysninger</h3>`}
 function openEditor(kind,obj,preset={},year=null){
@@ -577,14 +617,14 @@ const hm=d=>pad(d.getHours())+':'+pad(d.getMinutes());
 function syncText(){if(syncErr)return syncErr;if(!tok)return'Ikke forbundet til Dropbox'+(pending.size?` · ${pending.size} ændring${pending.size===1?'':'er'} kun i denne browser`:'');if(saving)return'Synkroniserer med Dropbox…';if(pending.size)return`${pending.size} ændring${pending.size===1?'':'er'} venter på at blive gemt`;return lastSync?`Dropbox · gemt ${hm(lastSync)}`:'Dropbox · forbundet'}
 function updateSync(){
   const sb=$('#btnSave');if(sb){let t,c,ti;
-    if(!tok){t='Forbind Dropbox';c='pri';ti='Forbind til Excel-filen på Dropbox, så ændringer gemmes automatisk'}
+    if(!tok){t='Forbind Dropbox';c='plan';ti='Forbind til Excel-filen på Dropbox, så ændringer gemmes automatisk'}
     else if(saving){t='Gemmer…';c='';ti='Gemmer i Excel-filen på Dropbox'}
     else if(syncErr){t='Gem igen';c='danger';ti=syncErr}
-    else if(pending.size){t=`Gem i Excel (${pending.size})`;c='pri';ti='Gem ændringerne i Excel-filen nu'}
+    else if(pending.size){t=`Gem i Excel (${pending.size})`;c='plan';ti='Gem ændringerne i Excel-filen nu'}
     else{t=lastSync?`✓ Gemt ${hm(lastSync)}`:'✓ Gemt i Excel';c='ok';ti='Alt er gemt i Excel-filen. Klik for at hente kollegernes seneste ændringer.'}
     sb.textContent=t;sb.className='btn '+c;sb.title=ti;sb.setAttribute('aria-busy',saving?'true':'false')}
   const s=$('#sync');s.textContent=syncText();s.className='sync'+(syncErr?' bad':(!tok||saving||pending.size)?' warn':'');
-  const b=$('#banner');if(!tok){b.innerHTML=`Årshjulet er ikke forbundet til Excel-filen på Dropbox, så ændringer gemmes kun i denne browser. <button class="btn pri" id="bConnect" style="margin-left:8px">Forbind Dropbox</button>`;b.classList.add('on')}else if(syncErr){b.textContent=syncErr;b.classList.add('on')}else b.classList.remove('on')}
+  const b=$('#banner');if(!tok){b.textContent='Ændringer gemmes kun i denne browser, indtil du forbinder til Excel-filen på Dropbox.';b.classList.add('on')}else if(syncErr){b.textContent=syncErr;b.classList.add('on')}else b.classList.remove('on')}
 function showDrawer(){$('#drawer').classList.add('on');$('#scrim').classList.add('on');$('#drawer').setAttribute('aria-hidden','false')}
 function openKey(k,y){const e=entries.get(k);if(e)openEditor(e.kind,e,{},y?+y:null)}
 document.addEventListener('click',e=>{
