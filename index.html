@@ -126,7 +126,7 @@ table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-bl
 <body>
 <div class="app">
 <aside class="side">
-  <div class="brand"><svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><g fill="none" stroke-width="6"><path d="M17 4a13 13 0 0 1 13 13" stroke="#7fa9d6"/><path d="M30 17a13 13 0 0 1-13 13" stroke="#86c76b"/><path d="M17 30A13 13 0 0 1 4 17" stroke="#e9bd4c"/><path d="M4 17A13 13 0 0 1 17 4" stroke="#e38a52"/></g><path d="M17 17 25 8" stroke="#ff7a57" stroke-width="2.2" stroke-linecap="round"/><circle cx="17" cy="17" r="2.4" fill="#fff"/></svg><div><b>Redaktionens hukommelse</b><span>Version 2.13 | Udviklet af RH 🤓</span></div></div>
+  <div class="brand"><svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><g fill="none" stroke-width="6"><path d="M17 4a13 13 0 0 1 13 13" stroke="#7fa9d6"/><path d="M30 17a13 13 0 0 1-13 13" stroke="#86c76b"/><path d="M17 30A13 13 0 0 1 4 17" stroke="#e9bd4c"/><path d="M4 17A13 13 0 0 1 17 4" stroke="#e38a52"/></g><path d="M17 17 25 8" stroke="#ff7a57" stroke-width="2.2" stroke-linecap="round"/><circle cx="17" cy="17" r="2.4" fill="#fff"/></svg><div><b>Redaktionens hukommelse</b><span>Version 2.14 | Udviklet af RH 🤓</span></div></div>
   <nav class="nav" id="nav"></nav>
   <button class="sync warn" id="sync" title="Dropbox-indstillinger: filsti og forbindelse">Forbinder…</button>
 </aside>
@@ -262,9 +262,9 @@ const KINDS={
   fields:[['task','Opgave','text',0,1],['itemId','Begivenhed eller møde','itemref'],['year','Gælder år','number',0,0,'Kun for årligt tilbagevendende begivenheder. Udfyldes automatisk, når opgaven oprettes fra begivenheden.'],['deadline','Deadline','date'],['owner','Ansvarlig','text'],['status','Status','select',['Ikke startet','I gang','Afventer','Færdig','Droppet']],['priority','Prioritet','select',PRI],['note','Note','textarea']],
   cols:[['deadline','Deadline','d'],['task','Opgave','b'],['_item','Begivenhed'],['owner','Ansvarlig'],['status','Status'],['priority','Prioritet']],sort:'deadline'}
 };
-const VIEWS=[['oversigt','Overblik'],['aarshjul','Årshjul'],...Object.entries(KINDS).flatMap(([k,K])=>k==='item'?[[K.view,K.label,k],['begivenheder','Begivenheder','item',{type:'Begivenhed'}]]:[[K.view,K.label,k]])];
+const VIEWS=[['oversigt','Overblik'],['aarshjul','Årshjul'],...Object.entries(KINDS).flatMap(([k,K])=>k==='item'?[[K.view,K.label,k],['begivenheder','Begivenheder','item',{type:'Begivenhed',types:['Begivenhed','Sæsonhistorie']}]]:[[K.view,K.label,k]])];
 const viewFilter=()=>VIEWS.find(v=>v[0]===curView)?.[3]||null;
-const inView=(e,f)=>!f||(e.type||'Begivenhed')===f.type;
+const inView=(e,f)=>!f||(f.types||[f.type]).includes(e.type||'Begivenhed');
 
 /* ---------- data: lokal cache + Dropbox ---------- */
 const DROPBOX_APP_KEY='iqiy8fuwco3ga6e'; // Dropbox App key (ikke hemmelig)
@@ -733,8 +733,8 @@ document.addEventListener('click',e=>{
 document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();if(tok){clearTimeout(saveTimer);syncNow()}else connect();return}if(e.key==='Escape'&&$('#drawer').classList.contains('on')){importList=null;closeEditor()}if(e.key==='Enter'&&e.target.matches('tr[data-key]'))openKey(e.target.dataset.key,e.target.dataset.y)});
 document.addEventListener('change',e=>{if(e.target.id==='refAdd'&&e.target.value){const ids=refIds($('#refsVal').value);if(!ids.includes(e.target.value))ids.push(e.target.value);refsSet(ids);return}if(e.target.id==='kindSel')openEditor(e.target.value,null)});
 document.addEventListener('submit',e=>{e.preventDefault();if(e.target.id==='sform')saveSettings();else saveEditor()});
-$('#btnNew').onclick=()=>{const k=VIEWS.find(v=>v[0]===curView)?.[2]||'item';openEditor(k,null,viewFilter()?{...viewFilter()}:curView==='aarshjul'?{date:iso(wYear,wMonth,wMonth===+today().slice(5,7)&&wYear===+today().slice(0,4)?+today().slice(8):1)}:{})};
-$('#rNew').onclick=()=>openEditor(VIEWS.find(v=>v[0]===curView)?.[2]||'item',null,viewFilter()?{...viewFilter()}:{});
+$('#btnNew').onclick=()=>{const k=VIEWS.find(v=>v[0]===curView)?.[2]||'item';openEditor(k,null,viewFilter()?{type:viewFilter().type}:curView==='aarshjul'?{date:iso(wYear,wMonth,wMonth===+today().slice(5,7)&&wYear===+today().slice(0,4)?+today().slice(8):1)}:{})};
+$('#rNew').onclick=()=>openEditor(VIEWS.find(v=>v[0]===curView)?.[2]||'item',null,viewFilter()?{type:viewFilter().type}:{});
 $('#btnImport').onclick=()=>$('#file').click();
 $('#file').onchange=e=>{const f=e.target.files[0];e.target.value='';if(f)readFile(f)};
 $('#btnExport').onclick=doExport;
