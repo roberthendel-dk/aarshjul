@@ -105,7 +105,7 @@ textarea.inp{padding:10px 12px;min-height:96px;resize:vertical;width:100%}
 .form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;background:var(--surface);border-radius:var(--r);padding:16px;box-shadow:var(--shadow)}
 .fld{display:grid;gap:5px;align-content:start}.fld.full{grid-column:1/-1}.fld label{font-size:13px;font-weight:600;color:var(--muted)}.fld label b{color:var(--red)}
 .fld .inp{width:100%}.fh{font-size:12.5px;color:var(--muted);line-height:1.4}
-.yr{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) 42px;gap:6px;align-items:center;margin-bottom:6px}.yr .btn{padding:0}.yr.pd{grid-template-columns:minmax(0,1fr) 42px}#pform .acts{margin:4px 0}
+.yr{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) 42px;gap:6px;align-items:center;margin-bottom:6px}.yr .btn{padding:0}.refs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}.refchip{display:inline-flex;align-items:center;gap:4px;background:var(--blue-soft);color:var(--blue);border-radius:8px;padding:3px 4px 3px 10px;font-size:14px;font-weight:600;max-width:100%}.refchip button{all:unset;cursor:pointer;width:24px;height:24px;display:grid;place-items:center;border-radius:6px}.refchip button:hover{background:color-mix(in srgb,var(--blue) 15%,transparent)}.refchip button:focus-visible{outline:2px solid var(--blue)}.yr.pd{grid-template-columns:minmax(0,1fr) 42px}#pform .acts{margin:4px 0}
 .hint{font-size:13px;color:var(--muted);margin-top:14px}
 .cov{background:var(--surface);border-radius:var(--r);padding:4px 14px 12px;box-shadow:var(--shadow);margin-bottom:14px}
 .cov h3{font-size:15px;padding:12px 2px 10px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:8px}.cov h3 small{color:var(--muted);font-weight:500}
@@ -126,7 +126,7 @@ table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-bl
 <body>
 <div class="app">
 <aside class="side">
-  <div class="brand"><svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><g fill="none" stroke-width="6"><path d="M17 4a13 13 0 0 1 13 13" stroke="#7fa9d6"/><path d="M30 17a13 13 0 0 1-13 13" stroke="#86c76b"/><path d="M17 30A13 13 0 0 1 4 17" stroke="#e9bd4c"/><path d="M4 17A13 13 0 0 1 17 4" stroke="#e38a52"/></g><path d="M17 17 25 8" stroke="#ff7a57" stroke-width="2.2" stroke-linecap="round"/><circle cx="17" cy="17" r="2.4" fill="#fff"/></svg><div><b>Redaktionens hukommelse</b><span>Version 2.10 | Udviklet af RH 🤓</span></div></div>
+  <div class="brand"><svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><g fill="none" stroke-width="6"><path d="M17 4a13 13 0 0 1 13 13" stroke="#7fa9d6"/><path d="M30 17a13 13 0 0 1-13 13" stroke="#86c76b"/><path d="M17 30A13 13 0 0 1 4 17" stroke="#e9bd4c"/><path d="M4 17A13 13 0 0 1 17 4" stroke="#e38a52"/></g><path d="M17 17 25 8" stroke="#ff7a57" stroke-width="2.2" stroke-linecap="round"/><circle cx="17" cy="17" r="2.4" fill="#fff"/></svg><div><b>Redaktionens hukommelse</b><span>Version 2.11 | Udviklet af RH 🤓</span></div></div>
   <nav class="nav" id="nav"></nav>
   <button class="sync warn" id="sync" title="Dropbox-indstillinger: filsti og forbindelse">Forbinder…</button>
 </aside>
@@ -256,8 +256,8 @@ const KINDS={
   fields:[['title','Titel','text',0,1],['date','Planlagt dato','date',0,1],['interval','Interval','select',['3 måneder','6 måneder','1 år','2 år','3 år','5 år','10 år','Egen dato']],['trigger','Udløserdato','date'],['status','Status','select',['Skal vurderes','Skal planlægges','Under arbejde','Udgivet','Droppet']],['priority','Prioritet','select',PRI],['sourceType','Kildetype','text'],['sourceId','Kilde-ID','text'],['angle','Forslag til vinkel','textarea']],
   cols:[['date','Dato','d'],['title','Titel','b'],['interval','Interval'],['status','Status'],['priority','Prioritet']],sort:'date'},
  story:{one:'historie',many:'historier',view:'daekning',label:'Tidligere dækning',prefix:'HIS',name:e=>e.title,
-  fields:[['title','Rubrik','text',0,1],['itemId','Begivenhed eller møde','itemref',0,0,'Vælg den begivenhed eller det møde, artiklen handler om. Så kan man se dækningen, næste gang punktet kommer op.'],['year','Hører til udgaven i år','number',0,0,'Kun for tilbagevendende begivenheder. Tomt: appen vælger den udgave, der ligger tættest på artiklens dato.'],['date','Udgivet','date'],['journalist','Journalist','text'],['platform','Medie/platform','text'],['url','URL','url'],['note','Note eller vinkel','textarea']],
-  cols:[['date','Dato','d'],['title','Rubrik','b'],['_item','Punkt i årshjulet'],['journalist','Journalist'],['platform','Platform'],['_link','Link']],sort:'-date'},
+  fields:[['title','Rubrik','text',0,1],['itemId','Begivenheder og møder','itemrefs',0,0,'En artikel kan kobles på flere begivenheder og møder, fx både udvalgsmødet og byrådsmødet, hvor sagen behandles.'],['year','Hører til udgaven i år','number',0,0,'Kun for tilbagevendende begivenheder. Tomt: appen vælger den udgave, der ligger tættest på artiklens dato.'],['date','Udgivet','date'],['journalist','Journalist','text'],['platform','Medie/platform','text'],['url','URL','url'],['note','Note eller vinkel','textarea']],
+  cols:[['date','Dato','d'],['title','Rubrik','b'],['_item','Begivenhed eller møde'],['journalist','Journalist'],['platform','Platform'],['_link','Link']],sort:'-date'},
  task:{one:'opgave',view:'opgaver',label:'Opgaver',prefix:'OPG',name:e=>e.task,
   fields:[['task','Opgave','text',0,1],['itemId','Begivenhed eller møde','itemref'],['year','Gælder år','number',0,0,'Kun for årligt tilbagevendende begivenheder. Udfyldes automatisk, når opgaven oprettes fra begivenheden.'],['deadline','Deadline','date'],['owner','Ansvarlig','text'],['status','Status','select',['Ikke startet','I gang','Afventer','Færdig','Droppet']],['priority','Prioritet','select',PRI],['note','Note','textarea']],
   cols:[['deadline','Deadline','d'],['task','Opgave','b'],['_item','Begivenhed'],['owner','Ansvarlig'],['status','Status'],['priority','Prioritet']],sort:'deadline'}
@@ -389,9 +389,15 @@ const overlaps=(o,a,b)=>o.date<=b&&(o.end||o.date)>=a;
 let storiesBy={},tasksBy={};
 const isUrl=u=>/^https?:\/\//i.test(u||'');
 function docLink(e){const minutes=valid(e.date)&&diff(e.date,today())>2;return{minutes,url:minutes?(isUrl(e.minutesUrl)?e.minutesUrl:isUrl(e.agendaUrl)?e.agendaUrl:''):(isUrl(e.agendaUrl)?e.agendaUrl:'')}}
+const refIds=v=>String(v||'').split(/[;,]/).map(x=>x.trim()).filter(Boolean);
+const refLabel=it=>!it?'(slettet punkt)':it.kind==='meeting'?`${it.title}${it.municipality?', '+it.municipality:''} – ${fmt(it.date)}`:`${it.title} – ${isRep(it)?repText(it):fmt(it.date)}`;
+function refOptions(sel,skip=[]){const o=(it)=>skip.includes(it.id)?'':`<option value="${esc(it.id)}" ${sel.includes(it.id)?'selected':''}>${esc(refLabel(it))}</option>`;
+  return`<optgroup label="Årshjulet">${all('item').sort((a,b)=>String(a.title).localeCompare(String(b.title),'da')).map(o).join('')}</optgroup><optgroup label="Politik">${all('meeting').sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(o).join('')}</optgroup>`}
+const refChip=id=>`<span class="refchip" data-id="${esc(id)}">${esc(refLabel(refEntry(id)))}<button type="button" data-rmref aria-label="Fjern kobling">✕</button></span>`;
+function refsSet(ids){$('#refsVal').value=ids.join(';');$('#refs').innerHTML=ids.length?ids.map(refChip).join(''):'<span class="fh">Ikke koblet på noget endnu.</span>';$('#refAdd').innerHTML=`<option value="">+ Kobl på en begivenhed eller et møde</option>${refOptions([],ids)}`}
 const refKey=id=>{const a='item~'+safe(id),b='meeting~'+safe(id);return entries.has(b)&&!entries.has(a)?b:a};
 const refEntry=id=>id?entries.get(refKey(id)):null;
-function countStories(){storiesBy={};tasksBy={};for(const e of entries.values()){if(!e.itemId)continue;const k=refKey(e.itemId);if(e.kind==='story')(storiesBy[k]=storiesBy[k]||[]).push(e);else if(e.kind==='task')(tasksBy[k]=tasksBy[k]||[]).push(e)}}
+function countStories(){storiesBy={};tasksBy={};for(const e of entries.values()){if(!e.itemId)continue;if(e.kind==='story'){for(const id of new Set(refIds(e.itemId))){const k=refKey(id);(storiesBy[k]=storiesBy[k]||[]).push(e)}continue}const k=refKey(e.itemId);if(e.kind==='story')(storiesBy[k]=storiesBy[k]||[]).push(e);else if(e.kind==='task')(tasksBy[k]=tasksBy[k]||[]).push(e)}}
 const taskYear=t=>/^\d{4}$/.test(String(t.year||'').trim())?+t.year:valid(t.deadline)?+t.deadline.slice(0,4):null;
 function tasksForOcc(key,year,rep){return(tasksBy[key]||[]).filter(t=>{const ty=taskYear(t);return!rep||ty===null||ty===year})}
 function storyYear(x,it){if(!it||!valid(it.date))return null;const by=+it.date.slice(0,4);
@@ -487,7 +493,7 @@ let curView='oversigt';
 const sortState={};
 function sortVal({e,n},f,kind){
   if(f==='_date')return(n?n.date:e.date)||'';if(f==='_next')return n?n.date:'';if(f==='_agenda')return e.agenda||'';
-  if(f==='_item'){const it=refEntry(e.itemId);return it?it.title:''}if(f==='_rep')return repText(e);if(f==='_link')return e.url||e.link||'';
+  if(f==='_item'){const it=refEntry(refIds(e.itemId)[0]);return it?it.title:''}if(f==='_rep')return repText(e);if(f==='_link')return e.url||e.link||'';
   if(f==='_cov')return'';if(f==='status'&&n&&n.year)return n.status||'';return String(e[f]??'')}
 function renderRegister(){
   const kind=VIEWS.find(v=>v[0]===curView)?.[2];if(!kind)return;const K=KINDS[kind];
@@ -506,6 +512,7 @@ function renderRegister(){
     if(f==='_rep')return esc(repText(e));
     if(f==='_agenda'){const l=docLink(e);if(l.minutes)return l.url?`<a href="${esc(l.url)}" target="_blank" rel="noopener">Åbn referat</a>`:'<span class="fh">Referat</span>';return(valid(e.agenda)?`<span class="nw">${esc(fmt(e.agenda))}</span>`:'')+(l.url?`${valid(e.agenda)?'<br>':''}<a href="${esc(l.url)}" target="_blank" rel="noopener">Åbn dagsorden</a>`:'')}
     if(f==='_cov'){const d=(n||e).date;if(!valid(d))return'';const c=covChips({kind:e.kind,status:e.status,key:keyOf(e),date:d,end:n?n.end:(valid(e.end)?e.end:''),year:n?.year,rep:isRep(e)});return c?`<span class="chips">${c}</span>`:''}
+    if(f==='_item'&&e.kind==='story')return refIds(e.itemId).map(id=>esc(refEntry(id)?.title||'(slettet punkt)')+(refEntry(id)?.kind==='meeting'&&valid(refEntry(id).date)?' ('+esc(fmt(refEntry(id).date))+')':'')).join('<br>');
     if(f==='_item'){if(!e.itemId)return'';const it=refEntry(e.itemId);return esc(it?it.title+(it.kind==='meeting'&&valid(it.date)?' ('+fmt(it.date)+')':''):'(slettet punkt)')}
     if(f==='status'&&n&&n.year)return esc(n.status)+` <span class="fh">(${n.year})</span>`;
     if(f==='_next')return n?esc(kind==='person'?`${n.age} år · ${fmt(n.date)}`:`${n.years} år · ${fmt(n.date)}`):'';
@@ -539,8 +546,8 @@ function openEditor(kind,obj,preset={},year=null){
   $('#dBody').innerHTML=(obj&&(kind==='item'||kind==='meeting')?linkedHtml(obj,year):'')+(obj?'':`<div class="fld full" style="margin-bottom:14px"><label for="kindSel">Hvad vil du oprette?</label><select class="inp" id="kindSel">${Object.entries(KINDS).map(([k,x])=>`<option value="${k}" ${k===kind?'selected':''}>${x.one[0].toUpperCase()+x.one.slice(1)}</option>`).join('')}</select></div>`)+
    `<form class="form" id="eform">${K.fields.map(([f,l,t,o,req,hint])=>{let val=v[f]??'';let lbl=l,hnt=hint;if(f==='status'&&year){val=statusFor(v,year);lbl=`Status for ${year}`;const ot=Object.entries({...yStat(v),[+v.date.slice(0,4)]:v.status||'Idé'}).filter(([y])=>+y!==year).sort().map(([y,st])=>y+': '+st);hnt='Gælder kun begivenheden i '+year+'. Nye år starter som "Idé".'+(ot.length?' Andre år – '+ot.join(', '):'')}if(f==='repeat')val=isRep(v)?(repVaries(v)?REP[3]:repWeekday(v)?REP[2]:REP[1]):REP[0];const id='f_'+f;
      const yrRow=(a='',b='')=>`<div class="yr"><input class="inp" type="date" data-a value="${esc(a)}" aria-label="Startdato"><span>–</span><input class="inp" type="date" data-b value="${esc(b)}" aria-label="Slutdato"><button type="button" class="btn ghost" data-rmyr aria-label="Fjern">✕</button></div>`;
-     const inp=t==='itemref'?`<select class="inp" id="${id}" name="${f}"><option value="">Intet punkt</option><optgroup label="Årshjulet">${all('item').sort((a,b)=>String(a.title).localeCompare(String(b.title),'da')).map(it=>`<option value="${esc(it.id)}" ${it.id===val?'selected':''}>${esc(it.title)} – ${esc(isRep(it)?repText(it):fmt(it.date))}</option>`).join('')}</optgroup><optgroup label="Politik">${all('meeting').sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(it=>`<option value="${esc(it.id)}" ${it.id===val?'selected':''}>${esc(it.title)}${it.municipality?', '+esc(it.municipality):''} – ${esc(fmt(it.date))}</option>`).join('')}</optgroup></select>`:t==='years'?`<div id="yrs">${Object.values(knownDates(v)).sort((x,y)=>x.date.localeCompare(y.date)).map(x=>yrRow(x.date,x.end)).join('')}</div><button type="button" class="btn ghost" id="addYr" style="justify-self:start">+ Tilføj dato for et år</button>`:t==='select'?`<select class="inp" id="${id}" name="${f}">${o.map(x=>`<option ${x===val?'selected':''}>${esc(x)}</option>`).join('')}</select>`:t==='textarea'?`<textarea class="inp" id="${id}" name="${f}">${esc(val)}</textarea>`:`<input class="inp" id="${id}" name="${f}" type="${t}" value="${esc(val)}" ${req?'required':''}>`;
-     return`<div class="fld ${t==='textarea'||t==='years'||t==='itemref'||f==='repeat'?'full':''}"><label for="${id}">${lbl}${req?' <b>*</b>':''}</label>${inp}${hnt?`<small class="fh">${esc(hnt)}</small>`:''}</div>`}).join('')}</form>`+
+     const inp=t==='itemrefs'?`<input type="hidden" name="${f}" id="refsVal" value="${esc(val)}"><div class="refs" id="refs">${refIds(val).length?refIds(val).map(refChip).join(''):'<span class="fh">Ikke koblet på noget endnu.</span>'}</div><select class="inp" id="refAdd" aria-label="Kobl på begivenhed eller møde"><option value="">+ Kobl på en begivenhed eller et møde</option>${refOptions([],refIds(val))}</select>`:t==='itemref'?`<select class="inp" id="${id}" name="${f}"><option value="">Intet punkt</option>${refOptions([val])}</select>`:t==='years'?`<div id="yrs">${Object.values(knownDates(v)).sort((x,y)=>x.date.localeCompare(y.date)).map(x=>yrRow(x.date,x.end)).join('')}</div><button type="button" class="btn ghost" id="addYr" style="justify-self:start">+ Tilføj dato for et år</button>`:t==='select'?`<select class="inp" id="${id}" name="${f}">${o.map(x=>`<option ${x===val?'selected':''}>${esc(x)}</option>`).join('')}</select>`:t==='textarea'?`<textarea class="inp" id="${id}" name="${f}">${esc(val)}</textarea>`:`<input class="inp" id="${id}" name="${f}" type="${t}" value="${esc(val)}" ${req?'required':''}>`;
+     return`<div class="fld ${t==='textarea'||t==='years'||t==='itemref'||t==='itemrefs'||f==='repeat'?'full':''}"><label for="${id}">${lbl}${req?' <b>*</b>':''}</label>${inp}${hnt?`<small class="fh">${esc(hnt)}</small>`:''}</div>`}).join('')}</form>`+
    (obj?`<p class="hint">ID ${esc(obj.id)}${obj.updated?' · senest ændret '+esc(fmt(obj.updated)):''}${obj.followMade?' · opfølgning er oprettet':''}</p>`:'');
   $('#dFoot').innerHTML=`<span>${obj?'<button class="btn danger" id="dDel">Slet</button>':''}</span><span class="acts"><button class="btn ghost" id="dCancel">Annullér</button><button class="btn pri" id="dSave">Gem</button></span>`;
   showDrawer();
@@ -703,6 +710,7 @@ document.addEventListener('click',e=>{
   else if(id==='sSync'){closeEditor();syncNow()}
   else if(id==='sOff'){disconnect();closeEditor()}
   else if(id==='dSave')saveEditor();
+  else if(e.target.closest('[data-rmref]')){const rid=e.target.closest('.refchip').dataset.id;refsSet(refIds($('#refsVal').value).filter(x=>x!==rid))}
   else if(e.target.closest('[data-sort]')){const i=+e.target.closest('[data-sort]').dataset.sort,k=VIEWS.find(v=>v[0]===curView)?.[2],cur=sortState[k];sortState[k]={i,dir:cur&&cur.i===i&&cur.dir==='asc'?'desc':'asc'};renderRegister()}
   else if(id==='rPlan')openPlan();
   else if(id==='pAdd'){$('#pdates').insertAdjacentHTML('beforeend',pRow());$('#pdates .yr:last-child input').focus()}
@@ -718,7 +726,7 @@ document.addEventListener('click',e=>{
   const g=e.target.closest('[data-g]');if(g){off.has(g.dataset.g)?off.delete(g.dataset.g):off.add(g.dataset.g);renderWheel()}
 });
 document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();if(tok){clearTimeout(saveTimer);syncNow()}else connect();return}if(e.key==='Escape'&&$('#drawer').classList.contains('on')){importList=null;closeEditor()}if(e.key==='Enter'&&e.target.matches('tr[data-key]'))openKey(e.target.dataset.key,e.target.dataset.y)});
-document.addEventListener('change',e=>{if(e.target.id==='kindSel')openEditor(e.target.value,null)});
+document.addEventListener('change',e=>{if(e.target.id==='refAdd'&&e.target.value){const ids=refIds($('#refsVal').value);if(!ids.includes(e.target.value))ids.push(e.target.value);refsSet(ids);return}if(e.target.id==='kindSel')openEditor(e.target.value,null)});
 document.addEventListener('submit',e=>{e.preventDefault();if(e.target.id==='sform')saveSettings();else saveEditor()});
 $('#btnNew').onclick=()=>{const k=VIEWS.find(v=>v[0]===curView)?.[2]||'item';openEditor(k,null,curView==='aarshjul'?{date:iso(wYear,wMonth,wMonth===+today().slice(5,7)&&wYear===+today().slice(0,4)?+today().slice(8):1)}:{})};
 $('#rNew').onclick=()=>openEditor(VIEWS.find(v=>v[0]===curView)?.[2]||'item',null);
