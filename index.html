@@ -126,7 +126,7 @@ table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-bl
 <body>
 <div class="app">
 <aside class="side">
-  <div class="brand"><svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><g fill="none" stroke-width="6"><path d="M17 4a13 13 0 0 1 13 13" stroke="#7fa9d6"/><path d="M30 17a13 13 0 0 1-13 13" stroke="#86c76b"/><path d="M17 30A13 13 0 0 1 4 17" stroke="#e9bd4c"/><path d="M4 17A13 13 0 0 1 17 4" stroke="#e38a52"/></g><path d="M17 17 25 8" stroke="#ff7a57" stroke-width="2.2" stroke-linecap="round"/><circle cx="17" cy="17" r="2.4" fill="#fff"/></svg><div><b>Redaktionens hukommelse</b><span>Version 2.1 | Udviklet af RH 🤓</span></div></div>
+  <div class="brand"><svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><g fill="none" stroke-width="6"><path d="M17 4a13 13 0 0 1 13 13" stroke="#7fa9d6"/><path d="M30 17a13 13 0 0 1-13 13" stroke="#86c76b"/><path d="M17 30A13 13 0 0 1 4 17" stroke="#e9bd4c"/><path d="M4 17A13 13 0 0 1 17 4" stroke="#e38a52"/></g><path d="M17 17 25 8" stroke="#ff7a57" stroke-width="2.2" stroke-linecap="round"/><circle cx="17" cy="17" r="2.4" fill="#fff"/></svg><div><b>Redaktionens hukommelse</b><span>Version 2.2 | Udviklet af RH 🤓</span></div></div>
   <nav class="nav" id="nav"></nav>
   <button class="sync warn" id="sync" title="Dropbox-indstillinger: filsti og forbindelse">Forbinder…</button>
 </aside>
@@ -256,7 +256,7 @@ const KINDS={
   fields:[['title','Titel','text',0,1],['date','Planlagt dato','date',0,1],['interval','Interval','select',['3 måneder','6 måneder','1 år','2 år','3 år','5 år','10 år','Egen dato']],['trigger','Udløserdato','date'],['status','Status','select',['Skal vurderes','Skal planlægges','Under arbejde','Udgivet','Droppet']],['priority','Prioritet','select',PRI],['sourceType','Kildetype','text'],['sourceId','Kilde-ID','text'],['angle','Forslag til vinkel','textarea']],
   cols:[['date','Dato','d'],['title','Titel','b'],['interval','Interval'],['status','Status'],['priority','Prioritet']],sort:'date'},
  story:{one:'historie',many:'historier',view:'daekning',label:'Tidligere dækning',prefix:'HIS',name:e=>e.title,
-  fields:[['title','Rubrik','text',0,1],['itemId','Punkt i årshjulet','itemref',0,0,'Vælg det årshjulspunkt, artiklen handler om. Så kan man se dækningen, næste gang punktet kommer op.'],['date','Udgivet','date'],['journalist','Journalist','text'],['platform','Medie/platform','text'],['url','URL','url'],['note','Note eller vinkel','textarea']],
+  fields:[['title','Rubrik','text',0,1],['itemId','Punkt i årshjulet','itemref',0,0,'Vælg det årshjulspunkt, artiklen handler om. Så kan man se dækningen, næste gang punktet kommer op.'],['year','Hører til udgaven i år','number',0,0,'Kun for tilbagevendende begivenheder. Tomt: appen vælger den udgave, der ligger tættest på artiklens dato.'],['date','Udgivet','date'],['journalist','Journalist','text'],['platform','Medie/platform','text'],['url','URL','url'],['note','Note eller vinkel','textarea']],
   cols:[['date','Dato','d'],['title','Rubrik','b'],['_item','Punkt i årshjulet'],['journalist','Journalist'],['platform','Platform'],['_link','Link']],sort:'-date'},
  task:{one:'opgave',view:'opgaver',label:'Opgaver',prefix:'OPG',name:e=>e.task,
   fields:[['task','Opgave','text',0,1],['itemId','Begivenhed i årshjulet','itemref'],['year','Gælder år','number',0,0,'Kun for årligt tilbagevendende begivenheder. Udfyldes automatisk, når opgaven oprettes fra begivenheden.'],['deadline','Deadline','date'],['owner','Ansvarlig','text'],['status','Status','select',['Ikke startet','I gang','Afventer','Færdig','Droppet']],['priority','Prioritet','select',PRI],['note','Note','textarea']],
@@ -387,14 +387,24 @@ let storiesBy={},tasksBy={};
 function countStories(){storiesBy={};tasksBy={};for(const e of entries.values()){if(!e.itemId)continue;const k='item~'+safe(e.itemId);if(e.kind==='story')(storiesBy[k]=storiesBy[k]||[]).push(e);else if(e.kind==='task')(tasksBy[k]=tasksBy[k]||[]).push(e)}}
 const taskYear=t=>/^\d{4}$/.test(String(t.year||'').trim())?+t.year:valid(t.deadline)?+t.deadline.slice(0,4):null;
 function tasksForOcc(key,year,rep){return(tasksBy[key]||[]).filter(t=>{const ty=taskYear(t);return!rep||ty===null||ty===year})}
+function storyYear(x,it){if(!it||!valid(it.date))return null;const by=+it.date.slice(0,4);
+  if(/^\d{4}$/.test(String(x.year||'').trim()))return +x.year;
+  if(!isRep(it))return by;if(!valid(x.date))return null;
+  const sy=+x.date.slice(0,4),ev=everyN(it),kd=knownDates(it),base=valid(it.end)?Math.max(0,diff(it.date,it.end)):0;let best=null,bd=1e9;
+  for(let y=sy-ev-1;y<=sy+ev+1;y++){if(!kd[y]&&((y-by)%ev+ev)%ev)continue;
+    const d0=kd[y]?kd[y].date:y===by?it.date:repWeekday(it)?weekdayIn(y,it.date):inYear(y,it.date),d1=kd[y]?(kd[y].end||d0):y===by?(base?it.end:d0):(base?addDays(d0,base):d0);
+    const d=x.date<d0?diff(x.date,d0):x.date>d1?diff(d1,x.date):0;if(d<bd){bd=d;best=y}}
+  return best??by}
 function covInfo(o){if(o.kind!=='item')return null;
-  const st=(storiesBy[o.key]||[]).filter(x=>!valid(x.date)||x.date<o.date).length;
+  const it=entries.get(o.key),y=o.year||+o.date.slice(0,4),ys=(storiesBy[o.key]||[]).map(x=>storyYear(x,it));
+  const mine=ys.filter(v=>v===y).length,st=ys.filter(v=>v!==null&&v<y).length;
   const ts=tasksForOcc(o.key,o.year||+o.date.slice(0,4),o.rep),active=ts.filter(t=>t.status!=='Droppet'),done=active.filter(t=>t.status==='Færdig').length;
-  return{st,total:active.length,done,future:(o.end||o.date)>=today()}}
+  return{st,mine,total:active.length,done,future:(o.end||o.date)>=today()}}
 function covChips(o){const c=covInfo(o);if(!c)return'';const out=[];
-  if(c.st)out.push(`<span class="chip">${c.st} ${c.st===1?'artikel':'artikler'} fra tidligere</span>`);
+  if(c.mine)out.push(`<span class="chip ok">${c.mine} ${c.mine===1?'artikel':'artikler'} om begivenheden</span>`);
+  if(c.st)out.push(`<span class="chip">${c.st} ${c.st===1?'artikel':'artikler'} fra tidligere år</span>`);
   if(c.total)out.push(`<span class="chip ${c.done===c.total?'ok':'plan'}">${c.done===c.total?'✓ ':''}Dækning planlagt: ${c.done}/${c.total} opgaver færdige</span>`);
-  else if(c.future)out.push('<span class="chip warn">Ingen dækning planlagt</span>');
+  else if(c.future&&!c.mine)out.push('<span class="chip warn">Ingen dækning planlagt</span>');
   return out.join('')}
 const season=m=>m===12||m<3?'var(--winter)':m<6?'var(--spring)':m<9?'var(--summer)':'var(--autumn)';
 const WDS=['søn','man','tir','ons','tor','fre','lør'];
@@ -495,10 +505,10 @@ function route(){$('#vsub').textContent=subtitle();if($('#drawer').classList.con
 let editing=null;
 function linkedHtml(obj,year){const key=keyOf(obj),rep=isRep(obj),y=year||+obj.date.slice(0,4);
   const ts=tasksForOcc(key,y,rep).sort((a,b)=>(a.deadline||'9999').localeCompare(b.deadline||'9999'));
-  const ls=(storiesBy[key]||[]).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const ls=(storiesBy[key]||[]).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));const groups={};for(const x of ls){const sy=storyYear(x,obj);(groups[sy??'?']=groups[sy??'?']||[]).push(x)}
   const dt=d=>`<span class="dt" style="--season:${valid(d)?season(+d.slice(5,7)):'var(--muted)'}"><b>${valid(d)?+d.slice(8):'–'}</b><span>${valid(d)?MS[+d.slice(5,7)-1]+(d.slice(0,4)!==today().slice(0,4)?' '+d.slice(2,4):''):''}</span></span>`;
   return`<div class="cov"><h3>Planlagt dækning${rep?' '+y:''} <small>${ts.length?ts.filter(t=>t.status==='Færdig').length+'/'+ts.length+' færdige':''}</small></h3>${ts.length?ts.map(t=>`<div class="covr"><button type="button" class="row" data-key="${esc(keyOf(t))}">${dt(t.deadline)}<span class="rt"><span class="t">${t.status==='Færdig'?'✓ ':''}${esc(t.task)}</span><span class="m">${esc([t.owner,t.status].filter(Boolean).join(' · '))}</span></span></button></div>`).join(''):'<div class="empty">Ingen opgaver endnu.</div>'}<button type="button" class="btn ghost" id="addTask">+ Tilføj opgave</button></div>
-  <div class="cov"><h3>Tidligere dækning <small>${ls.length||''}</small></h3>${ls.length?ls.map(x=>`<div class="covr"><button type="button" class="row" data-key="${esc(keyOf(x))}">${dt(x.date)}<span class="rt"><span class="t">${esc(x.title)}</span><span class="m">${esc([x.journalist,x.platform].filter(Boolean).join(' · '))}</span></span></button>${/^https?:\/\//i.test(x.url||'')?`<a href="${esc(x.url)}" target="_blank" rel="noopener">Åbn</a>`:''}</div>`).join(''):'<div class="empty">Ingen artikler koblet på endnu.</div>'}<button type="button" class="btn ghost" id="addStory">+ Tilføj artikel</button></div><h3 class="formh">Oplysninger</h3>`}
+  <div class="cov"><h3>${rep?'Artikler om udgaven '+y:'Artikler om begivenheden'} <small>${(groups[y]||[]).length||''}</small></h3>${(groups[y]||[]).length?groups[y].map(x=>`<div class="covr"><button type="button" class="row" data-key="${esc(keyOf(x))}">${dt(x.date)}<span class="rt"><span class="t">${esc(x.title)}</span><span class="m">${esc([x.journalist,x.platform].filter(Boolean).join(' · '))}</span></span></button>${/^https?:\/\//i.test(x.url||'')?`<a href="${esc(x.url)}" target="_blank" rel="noopener">Åbn</a>`:''}</div>`).join(''):'<div class="empty">Ingen artikler koblet på endnu.</div>'}<button type="button" class="btn ghost" id="addStory">+ Tilføj artikel</button></div>${rep?Object.keys(groups).filter(k=>k!==String(y)).sort().reverse().map(k=>`<div class="cov"><h3>${k==='?'?'Uden dato':(+k<y?'Tidligere: ':'Senere: ')+k} <small>${groups[k].length}</small></h3>${groups[k].map(x=>`<div class="covr"><button type="button" class="row" data-key="${esc(keyOf(x))}">${dt(x.date)}<span class="rt"><span class="t">${esc(x.title)}</span><span class="m">${esc([x.journalist,x.platform].filter(Boolean).join(' · '))}</span></span></button>${/^https?:\/\//i.test(x.url||'')?`<a href="${esc(x.url)}" target="_blank" rel="noopener">Åbn</a>`:''}</div>`).join('')}</div>`).join(''):''}<h3 class="formh">Oplysninger</h3>`}
 function openEditor(kind,obj,preset={},year=null){
   const K=KINDS[kind],v={...preset,...(obj||{})};
   if(obj&&kind==='item'&&isRep(obj)&&!year)year=+(nextOf(obj)?.date||obj.date).slice(0,4);
@@ -551,8 +561,8 @@ const SHEETS=[
   e=>({'Akkrediterings-ID':e.id,Arrangement:e.event,Type:e.type,Område:e.area,'Åbner dato':e.opens,Frist:e.deadline,Status:e.status,'Ansøgt af':e.applicant,Ansøgningslink:e.link,Pressekontakt:e.contact,'Foto-/videoregler':e.rules})],
  ['sporttag','Tags',['Tags','Sportstags'],r=>({id:pk(r,'Tag-ID','Tag ID','ID'),name:pk(r,'Navn'),sport:pk(r,'Sportsgren'),type:pk(r,'Type'),area:pk(r,'Område')}),
   e=>({'Tag-ID':e.id,Navn:e.name,Sportsgren:e.sport,Type:e.type,Område:e.area})],
- ['story','Historier',['Historier'],r=>({id:pk(r,'Historie-ID','Historie ID','ID'),title:pk(r,'Rubrik','Titel'),date:xd(pk(r,'Udgivelsesdato','Dato')),journalist:pk(r,'Journalist'),platform:pk(r,'Medie/platform','Platform'),url:pk(r,'URL','Link'),itemId:pk(r,'Punkt-ID','Punkt ID'),note:pk(r,'Kort note/vinkel','Note','Vinkel')}),
-  e=>({'Historie-ID':e.id,Rubrik:e.title,Udgivelsesdato:e.date,Journalist:e.journalist,'Medie/platform':e.platform,URL:e.url,'Kort note/vinkel':e.note,'Punkt-ID':e.itemId})],
+ ['story','Historier',['Historier'],r=>({id:pk(r,'Historie-ID','Historie ID','ID'),title:pk(r,'Rubrik','Titel'),date:xd(pk(r,'Udgivelsesdato','Dato')),journalist:pk(r,'Journalist'),platform:pk(r,'Medie/platform','Platform'),url:pk(r,'URL','Link'),itemId:pk(r,'Punkt-ID','Punkt ID'),year:String(pk(r,'År')),note:pk(r,'Kort note/vinkel','Note','Vinkel')}),
+  e=>({'Historie-ID':e.id,Rubrik:e.title,Udgivelsesdato:e.date,Journalist:e.journalist,'Medie/platform':e.platform,URL:e.url,'Kort note/vinkel':e.note,År:e.year,'Punkt-ID':e.itemId})],
  ['followup','Opfølgninger',['Opfølgninger'],r=>({id:pk(r,'Opfølgnings-ID','Opfølgnings ID','ID'),sourceType:pk(r,'Kilde type'),sourceId:pk(r,'Kilde ID'),title:pk(r,'Titel'),trigger:xd(pk(r,'Udløserdato')),interval:pk(r,'Interval'),date:xd(pk(r,'Planlagt dato','Dato')),angle:pk(r,'Forslag til vinkel','Vinkel'),status:pk(r,'Status')||'Skal vurderes',priority:pk(r,'Prioritet')||'Mellem'}),
   e=>({'Opfølgnings-ID':e.id,'Kilde type':e.sourceType,'Kilde ID':e.sourceId,Titel:e.title,Udløserdato:e.trigger,Interval:e.interval,'Planlagt dato':e.date,'Forslag til vinkel':e.angle,Status:e.status,Prioritet:e.priority})],
  ['task','Opgaver',['Opgaver'],r=>({id:pk(r,'Opgave-ID','Opgave ID','ID'),task:pk(r,'Opgave','Titel'),itemId:pk(r,'Punkt-ID','Punkt ID'),year:String(pk(r,'År')),deadline:xd(pk(r,'Deadline','Dato')),owner:pk(r,'Ansvarlig'),status:pk(r,'Status')||'Ikke startet',priority:pk(r,'Prioritet')||'Mellem',note:pk(r,'Note')}),
@@ -643,7 +653,7 @@ document.addEventListener('click',e=>{
   else if(id==='sOff'){disconnect();closeEditor()}
   else if(id==='dSave')saveEditor();
   else if(id==='addTask'&&editing?.orig){const it=editing.orig;openEditor('task',null,{itemId:it.id,year:isRep(it)&&editing.year?String(editing.year):'',owner:it.owner||'',status:'Ikke startet',priority:'Mellem'})}
-  else if(id==='addStory'&&editing?.orig){const it=editing.orig;openEditor('story',null,{itemId:it.id,date:today()})}
+  else if(id==='addStory'&&editing?.orig){const it=editing.orig;openEditor('story',null,{itemId:it.id,date:today(),year:isRep(it)&&editing.year?String(editing.year):''})}
   else if(id==='addYr'){$('#yrs').insertAdjacentHTML('beforeend',`<div class="yr"><input class="inp" type="date" data-a aria-label="Startdato"><span>–</span><input class="inp" type="date" data-b aria-label="Slutdato"><button type="button" class="btn ghost" data-rmyr aria-label="Fjern">✕</button></div>`);$('#yrs .yr:last-child [data-a]').focus()}
   else if(e.target.closest('[data-rmyr]'))e.target.closest('.yr').remove();
   else if(id==='dImport')doImport();
