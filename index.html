@@ -76,7 +76,7 @@ textarea.inp{padding:10px 12px;min-height:96px;resize:vertical;width:100%}
 .df{display:flex;justify-content:space-between;gap:8px;padding:14px 20px;border-top:1px solid var(--line);flex-wrap:wrap}
 .form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px}
 .fld{display:grid;gap:5px;align-content:start}.fld.full{grid-column:1/-1}.fld label{font-size:13px;font-weight:700;color:var(--muted)}.fld label b{color:var(--red)}
-.fld .inp{width:100%}.fh{font-size:13px;color:var(--muted);line-height:1.35}
+.fld .inp{width:100%}.yr{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) 44px;gap:6px;align-items:center;margin-bottom:6px}.yr .btn{padding:0}.fh{font-size:13px;color:var(--muted);line-height:1.35}
 .hint{font-size:13px;color:var(--muted);margin-top:14px}
 .toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:6px;z-index:40;opacity:0;pointer-events:none;transition:.2s;max-width:90vw}.toast.on{opacity:1;transform:translate(-50%,0)}.toast.err{background:var(--red);color:#fff}
 .banner{border:1.5px solid var(--ink);border-left:6px solid var(--red);padding:12px 14px;margin-bottom:20px;display:none;font-size:15px}.banner.on{display:block}
@@ -176,14 +176,16 @@ const AGES=[18,30,40,50,60,65,70,75,80,85,90,95,100,105,110];
 const ORG_MARKS=[1,5,10,15,20,25,30,40,50,60,70,75,80,90,100,110,125,150,175,200];
 const DEF_MARKS='10;25;50;75;100;125;150;200;250';
 const PRI=['Lav','Mellem','Høj','Akut'];
-const REP=['Nej','Ja, samme dato hvert år','Ja, samme ugedag hvert år'];
+const REP=['Nej','Ja, samme dato hvert år','Ja, samme ugedag hvert år','Ja, men datoen skifter fra år til år'];
 const isRep=e=>/^(Årligt|Ja)/.test(e.repeat||'');
-const repWeekday=e=>/ugedag/i.test(e.repeat||'');
+const repWeekday=e=>/ugedag|skifter/i.test(e.repeat||'');
+const repVaries=e=>/skifter/i.test(e.repeat||'');
+function knownDates(e){const m={};for(const p of String(e.dates||'').split(/[;\n]+/)){const[a,b]=p.split('/').map(x=>x.trim());if(valid(a))m[+a.slice(0,4)]={date:a,end:valid(b)&&b>a?b:''}}return m}
 function weekdayIn(y,s){const[oy,m,d]=parts(s),wd=new Date(Date.UTC(oy,m-1,d)).getUTCDay(),last=d+7>dim(oy,m);
   if(last){let dd=dim(y,m);while(new Date(Date.UTC(y,m-1,dd)).getUTCDay()!==wd)dd--;return iso(y,m,dd)}
   let dd=1;while(new Date(Date.UTC(y,m-1,dd)).getUTCDay()!==wd)dd++;dd+=7*(Math.ceil(d/7)-1);return iso(y,m,Math.min(dd,dim(y,m)))}
 const WD=['søndag','mandag','tirsdag','onsdag','torsdag','fredag','lørdag'];
-function repText(e){if(!isRep(e))return'';if(!repWeekday(e))return'Hver '+fmt(e.date).replace(/ \d{4}$/,'');const[y,m,d]=parts(e.date),last=d+7>dim(y,m);return`${last?'Sidste':Math.ceil(d/7)+'.'} ${WD[new Date(Date.UTC(y,m-1,d)).getUTCDay()]} i ${MON[m-1]}`}
+function repText(e){if(!isRep(e))return'';if(repVaries(e))return'Skiftende dato';if(!repWeekday(e))return'Hver '+fmt(e.date).replace(/ \d{4}$/,'');const[y,m,d]=parts(e.date),last=d+7>dim(y,m);return`${last?'Sidste':Math.ceil(d/7)+'.'} ${WD[new Date(Date.UTC(y,m-1,d)).getUTCDay()]} i ${MON[m-1]}`}
 const FOLLOW={'Ingen':[],'6 måneder':[6],'1 år':[12],'6 måneder + 1 år':[6,12],'1 år + 5 år':[12,60]};
 const OPEN=['Idé','Skal vurderes','Skal planlægges','Under forberedelse','Ikke ansøgt','Ikke startet','Afventer'];
 const GROUPS={event:['Begivenheder','var(--c-event)'],org:['Åbninger & jubilæer','var(--c-org)'],person:['Personligheder','var(--c-person)'],mark:['Historiske mærkedage','var(--c-mark)'],deadline:['Frister & opfølgning','var(--c-deadline)']};
@@ -191,7 +193,7 @@ const LANES={event:.305,org:.26,person:.215,mark:.17,deadline:.125};
 
 const KINDS={
  item:{one:'årshjulspunkt',view:'punkter',label:'Alle punkter',prefix:'AAR',name:e=>e.title,
-  fields:[['title','Titel','text',0,1],['type','Type','select',['Begivenhed','Åbning/lancering','Jubilæum','Projekt','Politisk frist','Sæsonhistorie','Sport','Andet']],['date','Dato','date',0,1],['end','Slutdato','date'],['repeat','Årligt tilbagevendende','select',REP,0,'"Samme ugedag" passer til begivenheder, der fx altid ligger sidste lørdag i juli. Datoen ovenfor er første gang, den skal vises.'],['area','Område','text'],['topic','Emne','text'],['owner','Ansvarlig','text'],['status','Status','select',['Idé','Skal planlægges','Under forberedelse','Klar til dækning','I gang','Udgivet','Skal følges op','Afventer','Afsluttet']],['priority','Prioritet','select',PRI],['follow','Opret opfølgning','select',Object.keys(FOLLOW)],['tags','Tags','text'],['angle','Journalistisk vinkel','textarea'],['description','Beskrivelse','textarea']],
+  fields:[['title','Titel','text',0,1],['type','Type','select',['Begivenhed','Åbning/lancering','Jubilæum','Projekt','Politisk frist','Sæsonhistorie','Sport','Andet']],['date','Startdato','date',0,1],['end','Slutdato','date',0,0,'Udfyldes kun, hvis begivenheden varer flere dage.'],['repeat','Årligt tilbagevendende','select',REP,0,'Samme ugedag: fx altid sidste lørdag i juli. Skifter: datoen fastlægges først hen ad vejen hvert år. Startdatoen ovenfor er første gang, begivenheden vises.'],['dates','Kendte datoer i kommende år','years',0,0,'Skriv årets dato ind, når den er kendt. Uden den viser appen et skøn ud fra sidste år, markeret med "Dato?".'],['area','Område','text'],['topic','Emne','text'],['owner','Ansvarlig','text'],['status','Status','select',['Idé','Skal planlægges','Under forberedelse','Klar til dækning','I gang','Udgivet','Skal følges op','Afventer','Afsluttet']],['priority','Prioritet','select',PRI],['follow','Opret opfølgning','select',Object.keys(FOLLOW)],['tags','Tags','text'],['angle','Journalistisk vinkel','textarea'],['description','Beskrivelse','textarea']],
   cols:[['_date','Dato'],['title','Titel','b'],['_rep','Tilbagevendende'],['type','Type'],['area','Område'],['owner','Ansvarlig'],['status','Status'],['priority','Prioritet']],sort:'date'},
  person:{one:'personlighed',view:'personer',label:'Personligheder',prefix:'PER',name:e=>e.name,
   fields:[['name','Navn','text',0,1],['birth','Fødselsdato','date',0,1],['known','Kendt for','text'],['status','Status','select',['Aktiv','Afdød','Ikke relevant']],['local','Lokal tilknytning','textarea']],
@@ -306,13 +308,16 @@ function disconnect(){tok=null;LS.del('aarshjul-dbx');rev=null;updateSync();toas
 
 /* ---------- occurrences ---------- */
 function occ(list,from,to){
-  const out=[],y0=+from.slice(0,4),y1=+to.slice(0,4);
-  const push=(e,date,title,type,group,extra={})=>{if(valid(date)&&date>=from&&date<=to)out.push({date,title,type,group,kind:e.kind,key:keyOf(e),area:e.area||'',status:e.status||'',priority:e.priority||'',...extra})};
+  const out=[],y0=+from.slice(0,4)-1,y1=+to.slice(0,4);
+  const push=(e,date,title,type,group,extra={})=>{if(valid(date)&&date<=to&&(extra.end||date)>=from)out.push({date,title,type,group,kind:e.kind,key:keyOf(e),area:e.area||'',status:e.status||'',priority:e.priority||'',...extra})};
   for(const e of list){
     switch(e.kind){
     case'item':if(!valid(e.date))break;
-      if(isRep(e)){const dur=valid(e.end)?Math.max(0,diff(e.date,e.end)):0;for(let y=y0;y<=y1;y++){const d=repWeekday(e)?weekdayIn(y,e.date):inYear(y,e.date);if(d>=e.date)push(e,d,e.title,e.type||'Begivenhed',e.type==='Åbning/lancering'||e.type==='Jubilæum'?'org':'event',{rep:1,dur})}}
-      else push(e,e.date,e.title,e.type||'Begivenhed',e.type==='Åbning/lancering'||e.type==='Jubilæum'?'org':'event');break;
+      if(isRep(e)){const base=valid(e.end)?Math.max(0,diff(e.date,e.end)):0,kd=knownDates(e),by=+e.date.slice(0,4);
+        for(let y=Math.max(y0,by);y<=y1;y++){let d,end,guess=false;
+          if(kd[y]){d=kd[y].date;end=kd[y].end}else if(y===by){d=e.date;end=base?e.end:''}else{d=repWeekday(e)?weekdayIn(y,e.date):inYear(y,e.date);end=base?addDays(d,base):'';guess=repVaries(e)}
+          const dur=end?diff(d,end):0;push(e,d,e.title,e.type||'Begivenhed',e.type==='Åbning/lancering'||e.type==='Jubilæum'?'org':'event',{rep:1,dur,end,guess})}}
+      else{const dur=valid(e.end)&&e.end>e.date?diff(e.date,e.end):0;push(e,e.date,e.title,e.type||'Begivenhed',e.type==='Åbning/lancering'||e.type==='Jubilæum'?'org':'event',{dur,end:dur?e.end:''})}break;
     case'person':if(!valid(e.birth)||e.status==='Ikke relevant')break;
       for(let y=y0;y<=y1;y++){const a=y-+e.birth.slice(0,4);if(AGES.includes(a))push(e,inYear(y,e.birth),`${e.name} fylder ${a}`,'Fødselsdag','person',{area:e.local||'',status:'',age:a})}break;
     case'org':if(!valid(e.opened))break;
@@ -333,9 +338,12 @@ const nextOf=e=>occ([e],today(),addDays(today(),365*120)).find(o=>!o.title.start
 const needsAction=o=>OPEN.includes(o.status)||o.priority==='Høj'||o.priority==='Akut';
 
 /* ---------- rendering helpers ---------- */
+const span=(a,b)=>{if(!valid(b)||b<=a)return fmt(a);const[ya,ma,da]=parts(a),[yb,mb,db]=parts(b);return ya!==yb?`${fmt(a)} – ${fmt(b)}`:ma===mb?`${da}.–${db}. ${MS[mb-1]} ${yb}`:`${da}. ${MS[ma-1]} – ${db}. ${MS[mb-1]} ${yb}`};
+const running=o=>o.end&&o.date<today()&&o.end>=today();
+const overlaps=(o,a,b)=>o.date<=b&&(o.end||o.date)>=a;
 function row(o,flag){const[y,m,d]=parts(o.date);const g=GROUPS[o.group];
-  const meta=[o.dur?`${o.dur+1} dage`:'',o.type,o.area,o.status].filter(Boolean).map(esc).join(' · ');
-  return`<button class="row" data-key="${esc(o.key)}"><span class="dt"><b>${d}</b><span>${MS[m-1]}${y!==+today().slice(0,4)?' '+y:''}</span><i style="background:${g[1]}"></i></span><span class="rt"><span class="t">${flag?`<span class="pill red">${flag}</span>`:''}${o.rep?'<span class="pill" title="Årligt tilbagevendende">↻ Årlig</span>':''}${o.priority==='Akut'?'<span class="pill red">Akut</span>':o.priority==='Høj'?'<span class="pill">Høj</span>':''}${esc(o.title)}</span><span class="m">${meta}</span></span></button>`}
+  const meta=[o.guess?'skønnet dato':'',o.dur?`${span(o.date,o.end).replace(/ \d{4}$/,'')} · ${o.dur+1} dage`:'',o.type,o.area,o.status].filter(Boolean).map(esc).join(' · ');
+  return`<button class="row" data-key="${esc(o.key)}"><span class="dt"><b>${d}</b><span>${MS[m-1]}${y!==+today().slice(0,4)?' '+y:''}</span><i style="background:${g[1]}"></i></span><span class="rt"><span class="t">${flag?`<span class="pill red">${flag}</span>`:''}${running(o)?'<span class="pill red">I gang</span>':''}${o.rep?'<span class="pill" title="Årligt tilbagevendende">↻ Årlig</span>':''}${o.guess?'<span class="pill red" title="Datoen er et skøn ud fra sidste år. Skriv årets dato ind på punktet.">Dato?</span>':''}${o.priority==='Akut'?'<span class="pill red">Akut</span>':o.priority==='Høj'?'<span class="pill">Høj</span>':''}${esc(o.title)}</span><span class="m">${meta}</span></span></button>`}
 const fill=(id,html,empty='Intet her')=>{$(id).innerHTML=html.length?html.join(''):`<div class="empty">${empty}</div>`};
 
 function renderDash(){
@@ -344,9 +352,9 @@ function renderDash(){
   const areas=[...new Set(base.map(o=>o.area).filter(Boolean))].sort((x,y)=>x.localeCompare(y,'da'));
   $('#fArea').innerHTML='<option value="">Alle områder</option>'+areas.map(x=>`<option ${x===a?'selected':''}>${esc(x)}</option>`).join('');
   const f=base.filter(o=>(!g||o.group===g)&&(!a||o.area===a));
-  const win=(lo,hi)=>f.filter(o=>{const d=diff(t,o.date);return d>=lo&&d<=hi});
+  const win=(lo,hi)=>f.filter(o=>{const d=diff(t,running(o)?t:o.date);return d>=lo&&d<=hi});
   const late=f.filter(o=>o.due&&o.date<t);
-  const act=win(0,30).filter(needsAction);
+  const guess=win(0,90).filter(o=>o.guess);const act=[...guess,...win(0,30).filter(o=>needsAction(o)&&!o.guess)];
   const bd=win(0,90).filter(o=>o.group==='person');
   $('#k30').textContent=win(0,30).length;$('#kAct').textContent=act.length+late.length;$('#kBday').textContent=bd.length;$('#kLate').textContent=late.length;
   const n30=win(0,30).length,na=act.length+late.length;
@@ -375,12 +383,15 @@ function renderWheel(){
   for(const r of Object.values(LANES))h+=`<circle cx="${c}" cy="${c}" r="${r*S}" fill="none" stroke="var(--line)" stroke-dasharray="2 4"/>`;
   for(let m=1;m<=12;m++){
     const a1=ang(diff(iso(wYear,1,1),iso(wYear,m,1))/N),a2=ang(diff(iso(wYear,1,1),m===12?iso(wYear+1,1,1):iso(wYear,m+1,1))/N),am=(a1+a2)/2,on=m===wMonth;
-    const cnt=os.filter(o=>+o.date.slice(5,7)===m).length,[lx,ly]=P(.425,am),[cx,cy]=P(.378,am);
+    const cnt=os.filter(o=>overlaps(o,iso(wYear,m,1),iso(wYear,m,dim(wYear,m)))).length,[lx,ly]=P(.425,am),[cx,cy]=P(.378,am);
     h+=`<path class="seg" data-m="${m}" d="${seg(.35,.47,a1,a2)}" style="fill:${on?'var(--ink)':'var(--panel)'};stroke:var(--bg);stroke-width:3"><title>${MON[m-1]}: ${cnt} punkter</title></path>`;
     h+=`<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" pointer-events="none" style="fill:${on?'var(--bg)':'var(--ink)'};font-weight:800;font-size:${Math.max(12,S*.03)}px">${MS[m-1][0].toUpperCase()+MS[m-1].slice(1)}</text>`;
     if(cnt)h+=`<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="middle" pointer-events="none" style="fill:${on?'var(--bg)':'var(--muted)'};font-size:${Math.max(11,S*.021)}px">${cnt}</text>`}
   const dr=Math.max(4,S*.011);
-  for(const o of os){const[x,y]=P(LANES[o.group],ang((diff(iso(wYear,1,1),o.date)+.5)/N));h+=`<circle class="dot" data-key="${esc(o.key)}" cx="${x}" cy="${y}" r="${dr}" style="fill:${GROUPS[o.group][1]};stroke:var(--bg);stroke-width:1.5"><title>${esc(fmt(o.date)+' – '+o.title)}</title></circle>`}
+  for(const o of os){const col=GROUPS[o.group][1],tip=esc(span(o.date,o.end)+' – '+o.title);
+    if(o.end){const ys=iso(wYear,1,1),f1=Math.max(0,diff(ys,o.date))+.15,f2=Math.min(N,diff(ys,o.end)+1)-.15,a1=ang(f1/N),a2=ang(f2/N),r=LANES[o.group],[x1,y1]=P(r,a1),[x2,y2]=P(r,a2);
+      h+=`<path class="dot" data-key="${esc(o.key)}" d="M${x1},${y1}A${r*S},${r*S} 0 ${a2-a1>Math.PI?1:0} 1 ${x2},${y2}" style="fill:none;stroke:${col};stroke-width:${dr*2};stroke-linecap:round"><title>${tip}</title></path>`;continue}
+    const[x,y]=P(LANES[o.group],ang((diff(iso(wYear,1,1),o.date)+.5)/N));h+=`<circle class="dot" data-key="${esc(o.key)}" cx="${x}" cy="${y}" r="${dr}" style="fill:${GROUPS[o.group][1]};stroke:var(--bg);stroke-width:1.5"><title>${tip}</title></circle>`}
   const t=today();
   if(+t.slice(0,4)===wYear){const a=ang((diff(iso(wYear,1,1),t)+.5)/N),[x1,y1]=P(.1,a),[x2,y2]=P(.485,a);h+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--red)" stroke-width="2.5" stroke-linecap="round" pointer-events="none"/><circle cx="${x2}" cy="${y2}" r="${dr*1.1}" fill="var(--red)" pointer-events="none"/>`}
   h+=`<circle cx="${c}" cy="${c}" r="${S*.095}" style="fill:var(--bg);stroke:var(--ink);stroke-width:2"/><text x="${c}" y="${c-S*.008}" text-anchor="middle" dominant-baseline="middle" style="fill:var(--ink);font-weight:800;font-size:${S*.055}px">${wYear}</text><text x="${c}" y="${c+S*.042}" text-anchor="middle" style="fill:var(--muted);font-size:${Math.max(11,S*.02)}px">${os.length} punkter</text>`;
@@ -388,7 +399,7 @@ function renderWheel(){
   $('#yLbl').textContent=wYear;
   $('#mBtns').innerHTML=MS.map((m,i)=>`<button data-m="${i+1}" class="${i+1===wMonth?'on':''}">${m[0].toUpperCase()+m.slice(1)}</button>`).join('');
   $('#legend').innerHTML=Object.entries(GROUPS).map(([k,[l,col]])=>`<button data-g="${k}" class="${off.has(k)?'off':''}" aria-pressed="${!off.has(k)}"><i style="background:${col}"></i>${l}</button>`).join('');
-  const ml=os.filter(o=>+o.date.slice(5,7)===wMonth);
+  const ml=os.filter(o=>overlaps(o,iso(wYear,wMonth,1),iso(wYear,wMonth,dim(wYear,wMonth))));
   $('#mTitle').textContent=`${MON[wMonth-1]} ${wYear}`;$('#mCount').textContent=`${ml.length} punkt${ml.length===1?'':'er'}`;
   fill('#mList',ml.map(o=>row(o)),'Ingen punkter i denne måned');
 }
@@ -402,7 +413,7 @@ function renderRegister(){
   const s=K.sort;
   rows.sort((a,b)=>{if(!s)return K.name(a.e).localeCompare(K.name(b.e),'da');if(s==='_nextDate')return(a.n?.date||'9999').localeCompare(b.n?.date||'9999');if(kind==='item')return((a.n||a.e).date||'9999').localeCompare((b.n||b.e).date||'9999');if(s==='-date')return(b.e.date||'').localeCompare(a.e.date||'');return(a.e[s]||'9999').localeCompare(b.e[s]||'9999')});
   const cell=(e,n,[f,,t])=>{
-    if(f==='_date')return esc(fmt(n?n.date:e.date));
+    if(f==='_date'){const d=n?n.date:e.date,dur=valid(e.end)&&e.end>e.date?diff(e.date,e.end):0;return esc(dur?span(d,addDays(d,dur)):fmt(d))}
     if(f==='_rep')return esc(repText(e));
     if(f==='_next')return n?esc(kind==='person'?`${n.age} år · ${fmt(n.date)}`:`${n.years} år · ${fmt(n.date)}`):'';
     if(f==='_link'){const u=e.url||e.link;return/^https?:\/\//i.test(u||'')?`<a href="${esc(u)}" target="_blank" rel="noopener">Åbn</a>`:''}
@@ -423,9 +434,10 @@ function openEditor(kind,obj,preset={}){
   const K=KINDS[kind],v={...preset,...(obj||{})};editing={kind,orig:obj||null};
   $('#dTitle').textContent=(obj?'Redigér ':'Opret ')+K.one;
   $('#dBody').innerHTML=(obj?'':`<div class="fld full" style="margin-bottom:14px"><label for="kindSel">Hvad vil du oprette?</label><select class="inp" id="kindSel">${Object.entries(KINDS).map(([k,x])=>`<option value="${k}" ${k===kind?'selected':''}>${x.one[0].toUpperCase()+x.one.slice(1)}</option>`).join('')}</select></div>`)+
-   `<form class="form" id="eform">${K.fields.map(([f,l,t,o,req,hint])=>{let val=v[f]??'';if(f==='repeat')val=isRep(v)?(repWeekday(v)?REP[2]:REP[1]):REP[0];const id='f_'+f;
-     const inp=t==='select'?`<select class="inp" id="${id}" name="${f}">${o.map(x=>`<option ${x===val?'selected':''}>${esc(x)}</option>`).join('')}</select>`:t==='textarea'?`<textarea class="inp" id="${id}" name="${f}">${esc(val)}</textarea>`:`<input class="inp" id="${id}" name="${f}" type="${t}" value="${esc(val)}" ${req?'required':''}>`;
-     return`<div class="fld ${t==='textarea'?'full':''}"><label for="${id}">${l}${req?' <b>*</b>':''}</label>${inp}${hint?`<small class="fh">${esc(hint)}</small>`:''}</div>`}).join('')}</form>`+
+   `<form class="form" id="eform">${K.fields.map(([f,l,t,o,req,hint])=>{let val=v[f]??'';if(f==='repeat')val=isRep(v)?(repVaries(v)?REP[3]:repWeekday(v)?REP[2]:REP[1]):REP[0];const id='f_'+f;
+     const yrRow=(a='',b='')=>`<div class="yr"><input class="inp" type="date" data-a value="${esc(a)}" aria-label="Startdato"><span>–</span><input class="inp" type="date" data-b value="${esc(b)}" aria-label="Slutdato"><button type="button" class="btn ghost" data-rmyr aria-label="Fjern">✕</button></div>`;
+     const inp=t==='years'?`<div id="yrs">${Object.values(knownDates(v)).sort((x,y)=>x.date.localeCompare(y.date)).map(x=>yrRow(x.date,x.end)).join('')}</div><button type="button" class="btn ghost" id="addYr" style="justify-self:start">+ Tilføj dato for et år</button>`:t==='select'?`<select class="inp" id="${id}" name="${f}">${o.map(x=>`<option ${x===val?'selected':''}>${esc(x)}</option>`).join('')}</select>`:t==='textarea'?`<textarea class="inp" id="${id}" name="${f}">${esc(val)}</textarea>`:`<input class="inp" id="${id}" name="${f}" type="${t}" value="${esc(val)}" ${req?'required':''}>`;
+     return`<div class="fld ${t==='textarea'||t==='years'||f==='repeat'?'full':''}"><label for="${id}">${l}${req?' <b>*</b>':''}</label>${inp}${hint?`<small class="fh">${esc(hint)}</small>`:''}</div>`}).join('')}</form>`+
    (obj?`<p class="hint">ID ${esc(obj.id)}${obj.updated?' · senest ændret '+esc(fmt(obj.updated)):''}${obj.followMade?' · opfølgning er oprettet':''}</p>`:'');
   $('#dFoot').innerHTML=`<span>${obj?'<button class="btn danger" id="dDel">Slet</button>':''}</span><span class="acts"><button class="btn ghost" id="dCancel">Annullér</button><button class="btn pri" id="dSave">Gem</button></span>`;
   showDrawer();
@@ -435,7 +447,8 @@ function closeEditor(){$('#drawer').classList.remove('on');$('#scrim').classList
 async function saveEditor(){
   if(!editing)return;if(readOnly){toast('Du har kun læseadgang.',1);return}
   const K=KINDS[editing.kind],fd=new FormData($('#eform')),o={...(editing.orig||{}),kind:editing.kind};
-  for(const[f,,t]of K.fields)o[f]=String(fd.get(f)??'').trim();
+  for(const[f,,t]of K.fields)o[f]=t==='years'?[...document.querySelectorAll('#yrs .yr')].map(r=>[r.querySelector('[data-a]').value,r.querySelector('[data-b]').value]).filter(([a])=>valid(a)).map(([a,b])=>valid(b)&&b>a?a+'/'+b:a).join(';'):String(fd.get(f)??'').trim();
+  if(o.kind==='item'&&o.end&&o.date&&o.end<o.date){toast('Slutdatoen ligger før startdatoen',1);$('#f_end').focus();return}
   const miss=K.fields.filter(x=>x[4]&&!o[x[0]]);if(miss.length){toast('Udfyld: '+miss.map(x=>x[1]).join(', '),1);$('#f_'+miss[0][0]).focus();return}
   if(!o.id)o.id=newId(K.prefix);
   const base=o.kind==='org'?o.opened:o.date,months=FOLLOW[o.follow]||[],mk=months.length&&valid(base)&&!o.followMade;
@@ -452,8 +465,8 @@ const pk=(r,...ks)=>{for(const k of ks){const v=r[nk(k)];if(v!==undefined&&v!==n
 function xd(v){if(v===''||v==null)return'';if(typeof v==='number'){const p=XLSX.SSF.parse_date_code(v);return p?iso(p.y,p.m,p.d):''}if(v instanceof Date)return iso(v.getFullYear(),v.getMonth()+1,v.getDate());
   const t=String(v).trim();let m=t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);if(m)return iso(+m[1],+m[2],+m[3]);m=t.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/);return m?iso(+m[3],+m[2],+m[1]):''}
 const SHEETS=[
- ['item','Årshjulspunkter',['Årshjulspunkter','Årshjul','Begivenheder'],r=>({id:pk(r,'ID','Punkt-ID','Punkt ID'),title:pk(r,'Titel','Begivenhed','Navn'),type:pk(r,'Type','Kategori')||'Begivenhed',date:xd(pk(r,'Startdato','Dato','Start dato')),end:xd(pk(r,'Slutdato','Slut dato')),repeat:(g=>/ugedag/i.test(g)?REP[2]:/årl|hvert år|^ja/i.test(g)?REP[1]:REP[0])(String(pk(r,'Gentagelse','Årligt tilbagevendende'))),area:pk(r,'Område','Sted/område','Sted'),topic:pk(r,'Emne','Tema'),owner:pk(r,'Ansvarlig','Journalist'),status:pk(r,'Status')||'Idé',priority:pk(r,'Prioritet')||'Mellem',tags:pk(r,'Tags'),follow:pk(r,'Opfølgning')||'Ingen',followMade:pk(r,'Opfølgning oprettet')==='Ja',updated:xd(pk(r,'Senest ændret')),angle:pk(r,'Journalistisk vinkel','Vinkel'),description:pk(r,'Beskrivelse')}),
-  e=>({ID:e.id,Titel:e.title,Type:e.type,Startdato:e.date,Slutdato:e.end,Måned:valid(e.date)?+e.date.slice(5,7):'',Område:e.area,Emne:e.topic,Beskrivelse:e.description,'Journalistisk vinkel':e.angle,Ansvarlig:e.owner,Status:e.status,Prioritet:e.priority,Gentagelse:isRep(e)?(repWeekday(e)?'Årligt, samme ugedag':'Årligt'):'',Tags:e.tags,Opfølgning:e.follow,'Opfølgning oprettet':e.followMade?'Ja':'','Senest ændret':e.updated})],
+ ['item','Årshjulspunkter',['Årshjulspunkter','Årshjul','Begivenheder'],r=>({id:pk(r,'ID','Punkt-ID','Punkt ID'),title:pk(r,'Titel','Begivenhed','Navn'),type:pk(r,'Type','Kategori')||'Begivenhed',date:xd(pk(r,'Startdato','Dato','Start dato')),end:xd(pk(r,'Slutdato','Slut dato')),repeat:(g=>/skift|varier|fastsæt/i.test(g)?REP[3]:/ugedag/i.test(g)?REP[2]:/årl|hvert år|^ja/i.test(g)?REP[1]:REP[0])(String(pk(r,'Gentagelse','Årligt tilbagevendende'))),area:pk(r,'Område','Sted/område','Sted'),topic:pk(r,'Emne','Tema'),owner:pk(r,'Ansvarlig','Journalist'),status:pk(r,'Status')||'Idé',priority:pk(r,'Prioritet')||'Mellem',tags:pk(r,'Tags'),dates:String(pk(r,'Kendte datoer')),follow:pk(r,'Opfølgning')||'Ingen',followMade:pk(r,'Opfølgning oprettet')==='Ja',updated:xd(pk(r,'Senest ændret')),angle:pk(r,'Journalistisk vinkel','Vinkel'),description:pk(r,'Beskrivelse')}),
+  e=>({ID:e.id,Titel:e.title,Type:e.type,Startdato:e.date,Slutdato:e.end,Måned:valid(e.date)?+e.date.slice(5,7):'',Område:e.area,Emne:e.topic,Beskrivelse:e.description,'Journalistisk vinkel':e.angle,Ansvarlig:e.owner,Status:e.status,Prioritet:e.priority,Gentagelse:isRep(e)?(repVaries(e)?'Årligt, skiftende dato':repWeekday(e)?'Årligt, samme ugedag':'Årligt'):'','Kendte datoer':e.dates||'',Tags:e.tags,Opfølgning:e.follow,'Opfølgning oprettet':e.followMade?'Ja':'','Senest ændret':e.updated})],
  ['person','Personligheder',['Personligheder','Personer'],r=>({id:pk(r,'Person-ID','Person ID','ID'),name:pk(r,'Navn'),birth:xd(pk(r,'Fødselsdato','Fødsels dato')),known:pk(r,'Kendt for','Stilling'),local:pk(r,'Lokal tilknytning','Område'),status:pk(r,'Status')||'Aktiv'}),
   e=>({'Person-ID':e.id,Navn:e.name,Fødselsdato:e.birth,'Kendt for':e.known,'Lokal tilknytning':e.local,Status:e.status})],
  ['org','Organisationer',['Organisationer'],r=>({id:pk(r,'Org-ID','Org ID','ID'),name:pk(r,'Navn'),type:pk(r,'Type'),opened:xd(pk(r,'Grundlagt/åbnet','Grundlagt eller åbnet','Åbningsdato')),area:pk(r,'Område'),address:pk(r,'Adresse'),description:pk(r,'Beskrivelse'),follow:pk(r,'Opfølgning')||'Ingen',followMade:pk(r,'Opfølgning oprettet')==='Ja'}),
@@ -546,6 +559,8 @@ document.addEventListener('click',e=>{
   else if(id==='sSync'){closeEditor();syncNow()}
   else if(id==='sOff'){disconnect();closeEditor()}
   else if(id==='dSave')saveEditor();
+  else if(id==='addYr'){$('#yrs').insertAdjacentHTML('beforeend',`<div class="yr"><input class="inp" type="date" data-a aria-label="Startdato"><span>–</span><input class="inp" type="date" data-b aria-label="Slutdato"><button type="button" class="btn ghost" data-rmyr aria-label="Fjern">✕</button></div>`);$('#yrs .yr:last-child [data-a]').focus()}
+  else if(e.target.closest('[data-rmyr]'))e.target.closest('.yr').remove();
   else if(id==='dImport')doImport();
   else if(id==='dDel'){const b=$('#dDel');if(!b.classList.contains('arm')){b.classList.add('arm');b.textContent='Bekræft sletning';setTimeout(()=>{if(b.isConnected){b.classList.remove('arm');b.textContent='Slet'}},4000)}else{const o=editing?.orig;if(o)removeEntry(o).then(ok=>{if(ok){closeEditor();toast('Slettet')}})}}
   const m=e.target.closest('[data-m]');if(m){wMonth=+m.dataset.m;renderWheel()}
