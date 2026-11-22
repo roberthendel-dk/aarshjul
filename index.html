@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Redaktionelt Årshjul</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;700;800&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+/* VOICE: avisens planlægningstavle – nøgtern, tæt og hurtig at skimme til morgenmødet
+   IDEA: den trykte redaktionskalender, der hænger på væggen ved desken
+   PICTURE: et rigtigt årshjul – tolv månedssegmenter, prikker pr. type i ringe, rød nål for i dag
+   COLOUR and TYPE: hvidt papir, sort tryksværte, avisrød som eneste accent; Archivo 800 + Archivo
+   LAYOUT: sort spalte med navigation, tavle med tidshorisonter, hjulet stort med månedens liste ved siden af */
+:root{color-scheme:light dark;--bg:light-dark(#fff,#121212);--panel:light-dark(#f3f3f1,#1d1d1d);--panel2:light-dark(#e8e8e5,#2a2a2a);--ink:light-dark(#111,#ececec);--muted:light-dark(#5d5d5d,#a5a5a5);--line:light-dark(#dadad6,#343434);--red:light-dark(#d42a1e,#ff5b48);--side:#111;--c-event:var(--red);--c-org:light-dark(#0c7a6d,#3fc8b6);--c-person:light-dark(#2f55d4,#86a2ff);--c-mark:light-dark(#946600,#e2b24c);--c-deadline:light-dark(#111,#f0f0f0)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Archivo,system-ui,sans-serif;overflow-x:clip}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{font-weight:800;line-height:1.05;margin:0;text-wrap:balance}
+.app{display:grid;grid-template-columns:236px minmax(0,1fr);min-height:100vh}
+.side{background:var(--side);color:#f2f2f2;padding:22px 14px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:18px}
+.brand{padding:0 10px}.brand b{display:block;font-size:22px;font-weight:800;line-height:1.05}.brand span{color:#9b9b9b;font-size:13px}
+.nav{display:grid;gap:2px}.nav a{display:flex;justify-content:space-between;align-items:center;gap:8px;color:#d8d8d8;text-decoration:none;padding:10px;border-radius:6px;min-height:40px;font-size:15px}
+.nav a:hover{background:#222}.nav a.on{background:#fff;color:#111;font-weight:700}.nav a.on i{color:var(--red)}.nav i{font-style:normal;font-size:13px;color:#8a8a8a}
+.sync{margin-top:auto;background:none;border:0;border-top:1px solid #2a2a2a;text-align:left;cursor:pointer;width:100%;font-size:13px;color:#a9a9a9;padding:10px;border-top:1px solid #2a2a2a;display:flex;gap:8px;align-items:flex-start}.sync::before{content:"";flex:none;width:8px;height:8px;margin-top:6px;border-radius:50%;background:#3fc8b6}.sync.warn::before{background:#ffb02e}.sync.bad::before{background:#ff5b48}
+.top{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:2px solid var(--ink);padding:14px clamp(16px,3vw,36px);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
+.top h1{font-size:clamp(24px,3vw,34px)}
+.acts{display:flex;flex-wrap:wrap;gap:8px}
+.btn{min-height:44px;padding:0 16px;border:1.5px solid var(--ink);background:var(--bg);border-radius:6px;cursor:pointer;font-weight:600;white-space:nowrap}
+.btn:hover{background:var(--panel)}.btn.pri{background:var(--red);border-color:var(--red);color:#fff}.btn.pri:hover{filter:brightness(1.08)}
+.btn.ghost{border-color:var(--line)}.btn.danger{border-color:var(--red);color:var(--red)}.btn.danger.arm{background:var(--red);color:#fff}
+:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+.wrap{padding:clamp(16px,3vw,36px);max-width:1400px}
+.view{display:none}.view.on{display:block}
+.lede{font-size:clamp(26px,3.4vw,44px);max-width:22ch;margin-bottom:18px}.lede em{font-style:normal;color:var(--red)}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--ink);border-bottom:1px solid var(--line);margin-bottom:22px}
+.kpi{padding:14px 16px 14px 0}.kpi+.kpi{padding-left:16px;border-left:1px solid var(--line)}.kpi b{display:block;font-size:clamp(28px,3vw,40px);font-weight:800;line-height:1}.kpi span{font-size:14px;color:var(--muted)}
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;align-items:center}
+.inp{min-height:44px;border:1.5px solid var(--line);border-radius:6px;background:var(--bg);padding:0 12px;font-size:16px}
+textarea.inp{padding:10px 12px;min-height:96px;resize:vertical;width:100%}
+.horizon{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;margin-bottom:28px}
+.col h3,.panel h3{font-size:17px;padding-bottom:8px;border-bottom:3px solid var(--ink);margin-bottom:4px;display:flex;justify-content:space-between;gap:8px}
+.col h3 small,.panel h3 small{font-weight:500;color:var(--muted);font-size:14px}
+.col.now h3{border-color:var(--red);color:var(--red)}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px;margin-bottom:28px}
+.row{display:grid;grid-template-columns:48px minmax(0,1fr);gap:10px;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:10px 2px;cursor:pointer;align-items:start}
+.row:hover{background:var(--panel)}
+.dt{text-align:center;line-height:1;padding-top:2px}.dt b{display:block;font-size:22px;font-weight:800}.dt span{font-size:12px;color:var(--muted)}
+.dt i{display:block;width:8px;height:8px;border-radius:50%;margin:6px auto 0}
+.rt .t{display:block;font-weight:700;line-height:1.25}.rt .m{display:block;font-size:13px;color:var(--muted);margin-top:3px}
+.pill{display:inline-block;font-size:12px;font-weight:700;padding:1px 7px;border-radius:99px;background:var(--panel2);color:var(--ink);margin-right:4px}.pill.red{background:var(--red);color:#fff}
+.empty{color:var(--muted);font-size:14px;padding:14px 2px}
+.wheel{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:clamp(18px,3vw,40px);align-items:start}
+.fig{position:relative;aspect-ratio:1;width:100%;max-width:680px}.fig>svg{position:absolute;inset:0;width:100%;height:100%}
+.fig svg .seg{cursor:pointer}.fig svg .dot{cursor:pointer}
+.yearnav{display:flex;align-items:center;gap:10px;margin-bottom:12px}.yearnav b{font-size:28px;font-weight:800;min-width:3.2ch;text-align:center}
+.months{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;margin-bottom:14px}
+.months button{min-height:40px;border:1px solid var(--line);background:var(--bg);border-radius:5px;cursor:pointer;font-size:14px}.months button.on{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:700}
+.legend{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.legend button{display:flex;align-items:center;gap:6px;min-height:36px;border:1px solid var(--line);background:var(--bg);border-radius:99px;padding:0 12px;cursor:pointer;font-size:14px}
+.legend button i{width:10px;height:10px;border-radius:50%}.legend button.off{opacity:.4;text-decoration:line-through}
+.mhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;border-bottom:3px solid var(--ink);padding-bottom:8px}.mhead h2{font-size:30px;text-transform:capitalize}
+.table{width:100%;border-collapse:collapse;font-size:15px}
+.table th{text-align:left;font-size:13px;color:var(--muted);font-weight:600;border-bottom:2px solid var(--ink);padding:8px 10px 8px 0}
+.table td{border-bottom:1px solid var(--line);padding:10px 10px 10px 0;vertical-align:top}
+.table tbody tr{cursor:pointer}.table tbody tr:hover{background:var(--panel)}
+.table td.d{white-space:nowrap}.table td:first-child b{font-weight:700}
+.table a{color:var(--red)}
+.scrim{position:fixed;inset:0;background:rgb(0 0 0/.35);z-index:20;opacity:0;pointer-events:none;transition:opacity .2s}.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(560px,100%);background:var(--bg);z-index:21;transform:translateX(102%);transition:transform .22s;display:flex;flex-direction:column;border-left:2px solid var(--ink)}
+.drawer.on{transform:none}
+.dh{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:18px 20px;border-bottom:1px solid var(--line)}.dh h2{font-size:24px}
+.db{padding:18px 20px;overflow:auto;flex:1}
+.df{display:flex;justify-content:space-between;gap:8px;padding:14px 20px;border-top:1px solid var(--line);flex-wrap:wrap}
+.form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px}
+.fld{display:grid;gap:5px}.fld.full{grid-column:1/-1}.fld label{font-size:13px;font-weight:700;color:var(--muted)}.fld label b{color:var(--red)}
+.fld .inp{width:100%}
+.hint{font-size:13px;color:var(--muted);margin-top:14px}
+.toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:6px;z-index:40;opacity:0;pointer-events:none;transition:.2s;max-width:90vw}.toast.on{opacity:1;transform:translate(-50%,0)}.toast.err{background:var(--red);color:#fff}
+.banner{border:1.5px solid var(--ink);border-left:6px solid var(--red);padding:12px 14px;margin-bottom:20px;display:none;font-size:15px}.banner.on{display:block}
+.imp table{width:100%;font-size:15px;border-collapse:collapse}.imp td{padding:6px 0;border-bottom:1px solid var(--line)}.imp td+td{text-align:right;font-weight:700}
+@media(max-width:1100px){.horizon{grid-template-columns:repeat(2,minmax(0,1fr))}.wheel{grid-template-columns:1fr}.fig{max-width:560px;margin:auto}}
+@media(max-width:860px){.app{grid-template-columns:1fr}.side{position:static;height:auto;padding:14px 12px;gap:10px}.nav{display:flex;overflow-x:auto;gap:4px;padding-bottom:4px}.nav a{flex:none}.nav i{display:none}.sync{margin:0;border:0;padding:0 10px}}
+@media(max-width:600px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.kpi:nth-child(3){border-left:0;padding-left:0}.horizon,.grid2,.form{grid-template-columns:1fr}.top{position:static}.months{grid-template-columns:repeat(4,minmax(0,1fr))}
+table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px;border-bottom:1px solid var(--line)}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:8em;text-align:start}.stack td::before{content:attr(data-l);float:inline-start;width:7.5em;margin-inline-start:-8em;color:var(--muted)}.stack td:empty{display:none}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="side">
+  <div class="brand"><b>Redaktionelt Årshjul</b><span>Redaktionens hukommelse</span></div>
+  <nav class="nav" id="nav"></nav>
+  <button class="sync warn" id="sync" title="Dropbox-indstillinger">Forbinder…</button>
+</aside>
+<main>
+  <header class="top"><h1 id="vtitle">Overblik</h1>
+    <div class="acts"><button class="btn ghost" id="btnImport">Importér Excel</button><button class="btn ghost" id="btnExport">Eksportér Excel</button><button class="btn pri" id="btnNew">+ Opret</button></div>
+  </header>
+  <div class="wrap">
+    <div class="banner" id="banner"></div>
+
+    <section class="view" id="v-oversigt">
+      <h2 class="lede" id="lede">Indlæser…</h2>
+      <div class="kpis"><div class="kpi"><b id="k30">0</b><span>punkter de næste 30 dage</span></div><div class="kpi"><b id="kAct">0</b><span>kræver handling</span></div><div class="kpi"><b id="kBday">0</b><span>runde fødselsdage, 90 dage</span></div><div class="kpi"><b id="kLate">0</b><span>overskredne frister</span></div></div>
+      <div class="filters"><select class="inp" id="fGroup" aria-label="Type"><option value="">Alle typer</option></select><select class="inp" id="fArea" aria-label="Område"><option value="">Alle områder</option></select></div>
+      <div class="horizon">
+        <div class="col now"><h3>Kræver handling <small id="cAct"></small></h3><div id="lAct"></div></div>
+        <div class="col"><h3>Næste 14 dage <small id="c14"></small></h3><div id="l14"></div></div>
+        <div class="col"><h3>Dag 15–30 <small id="c30"></small></h3><div id="l30"></div></div>
+        <div class="col"><h3>Dag 31–60 <small id="c60"></small></h3><div id="l60"></div></div>
+      </div>
+      <div class="grid2">
+        <div class="panel"><h3>Dag 61–90 <small id="c90"></small></h3><div id="l90"></div></div>
+        <div class="panel"><h3>For et år siden <small>±7 dage</small></h3><div id="lYear"></div></div>
+      </div>
+      <div class="grid2">
+        <div class="panel"><h3>Runde fødselsdage <small>næste 90 dage</small></h3><div id="lBday"></div></div>
+        <div class="panel"><h3>Seneste dækning</h3><div id="lStory"></div></div>
+      </div>
+    </section>
+
+    <section class="view" id="v-aarshjul">
+      <div class="wheel">
+        <div class="fig" id="fig"><svg id="wsvg" role="img" aria-label="Årshjul"></svg></div>
+        <div>
+          <div class="yearnav"><button class="btn ghost" id="yPrev" aria-label="Forrige år">‹</button><b id="yLbl"></b><button class="btn ghost" id="yNext" aria-label="Næste år">›</button><button class="btn ghost" id="yNow">I dag</button></div>
+          <div class="months" id="mBtns"></div>
+          <div class="legend" id="legend"></div>
+          <input class="inp" id="wSearch" placeholder="Søg i årshjulet" style="width:100%;margin-bottom:14px">
+          <div class="mhead"><h2 id="mTitle"></h2><span class="hint" style="margin:0" id="mCount"></span></div>
+          <div id="mList"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="v-register">
+      <div class="filters"><input class="inp" id="rSearch" placeholder="Søg" style="flex:1;min-width:200px"><button class="btn pri" id="rNew">+ Opret</button></div>
+      <div id="rBody"></div>
+    </section>
+  </div>
+</main>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-hidden="true">
+  <div class="dh"><h2 id="dTitle">Opret</h2><button class="btn ghost" id="dClose">Luk</button></div>
+  <div class="db" id="dBody"></div>
+  <div class="df" id="dFoot"></div>
+</aside>
+<input type="file" id="file" accept=".xlsx,.xls" hidden>
+<div class="toast" id="toast"></div>
+
+<script>
+{
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const MON=['januar','februar','marts','april','maj','juni','juli','august','september','oktober','november','december'];
+const MS=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+const pad=n=>String(n).padStart(2,'0');
+const iso=(y,m,d)=>`${y}-${pad(m)}-${pad(d)}`;
+const valid=s=>/^\d{4}-\d{2}-\d{2}$/.test(String(s||''));
+const parts=s=>s.split('-').map(Number);
+const utc=s=>{const[y,m,d]=parts(s);return Date.UTC(y,m-1,d)};
+const today=()=>{const t=new Date();return iso(t.getFullYear(),t.getMonth()+1,t.getDate())};
+const diff=(a,b)=>Math.round((utc(b)-utc(a))/864e5);
+const addDays=(s,n)=>{const t=new Date(utc(s)+n*864e5);return iso(t.getUTCFullYear(),t.getUTCMonth()+1,t.getUTCDate())};
+const dim=(y,m)=>new Date(Date.UTC(y,m,0)).getUTCDate();
+const addMonths=(s,n)=>{let[y,m,d]=parts(s);m+=n;y+=Math.floor((m-1)/12);m=((m-1)%12+12)%12+1;return iso(y,m,Math.min(d,dim(y,m)))};
+const inYear=(y,s)=>{const[,m,d]=parts(s);return iso(y,m,Math.min(d,dim(y,m)))};
+const fmt=s=>{if(!valid(s))return'';const[y,m,d]=parts(s);return`${d}. ${MS[m-1]} ${y}`};
+
+const AGES=[18,30,40,50,60,65,70,75,80,85,90,95,100,105,110];
+const ORG_MARKS=[1,5,10,15,20,25,30,40,50,60,70,75,80,90,100,110,125,150,175,200];
+const DEF_MARKS='10;25;50;75;100;125;150;200;250';
+const PRI=['Lav','Mellem','Høj','Akut'];
+const FOLLOW={'Ingen':[],'6 måneder':[6],'1 år':[12],'6 måneder + 1 år':[6,12],'1 år + 5 år':[12,60]};
+const OPEN=['Idé','Skal vurderes','Skal planlægges','Under forberedelse','Ikke ansøgt','Ikke startet','Afventer'];
+const GROUPS={event:['Begivenheder','var(--c-event)'],org:['Åbninger & jubilæer','var(--c-org)'],person:['Personligheder','var(--c-person)'],mark:['Historiske mærkedage','var(--c-mark)'],deadline:['Frister & opfølgning','var(--c-deadline)']};
+const LANES={event:.305,org:.26,person:.215,mark:.17,deadline:.125};
+
+const KINDS={
+ item:{one:'årshjulspunkt',view:'punkter',label:'Alle punkter',prefix:'AAR',name:e=>e.title,
+  fields:[['title','Titel','text',0,1],['type','Type','select',['Begivenhed','Åbning/lancering','Jubilæum','Projekt','Politisk frist','Sæsonhistorie','Sport','Andet']],['date','Dato','date',0,1],['end','Slutdato','date'],['repeat','Gentagelse','select',['Engangs','Årligt']],['area','Område','text'],['topic','Emne','text'],['owner','Ansvarlig','text'],['status','Status','select',['Idé','Skal planlægges','Under forberedelse','Klar til dækning','I gang','Udgivet','Skal følges op','Afventer','Afsluttet']],['priority','Prioritet','select',PRI],['follow','Opret opfølgning','select',Object.keys(FOLLOW)],['tags','Tags','text'],['angle','Journalistisk vinkel','textarea'],['description','Beskrivelse','textarea']],
+  cols:[['date','Dato','d'],['title','Titel','b'],['type','Type'],['area','Område'],['owner','Ansvarlig'],['status','Status'],['priority','Prioritet']],sort:'date'},
+ person:{one:'personlighed',view:'personer',label:'Personligheder',prefix:'PER',name:e=>e.name,
+  fields:[['name','Navn','text',0,1],['birth','Fødselsdato','date',0,1],['known','Kendt for','text'],['status','Status','select',['Aktiv','Afdød','Ikke relevant']],['local','Lokal tilknytning','textarea']],
+  cols:[['name','Navn','b'],['_next','Næste runde dag'],['birth','Født','d'],['known','Kendt for'],['local','Lokal tilknytning']],sort:'_nextDate'},
+ org:{one:'organisation',view:'organisationer',label:'Jubilæer & åbninger',prefix:'ORG',name:e=>e.name,
+  fields:[['name','Navn','text',0,1],['type','Type','select',['Virksomhed','Butik','Restaurant/café','Forening','Sportsklub','Festival','Skole','Institution','Kultursted','Bygning','Andet']],['opened','Grundlagt eller åbnet','date'],['area','Område','text'],['address','Adresse','text'],['follow','Opret opfølgning','select',Object.keys(FOLLOW)],['description','Beskrivelse','textarea']],
+  cols:[['name','Navn','b'],['_next','Næste jubilæum'],['type','Type'],['opened','Åbnet','d'],['area','Område']],sort:'_nextDate'},
+ anniversary:{one:'mærkedag',view:'maerkedage',label:'Historiske mærkedage',prefix:'MRK',name:e=>e.title,
+  fields:[['title','Begivenhed','text',0,1],['date','Oprindelig dato','date',0,1],['area','Sted eller område','text'],['marks','Jubilæer (fx 25;50;100)','text'],['annual','Vis hvert år','select',['Nej','Ja']],['status','Status','select',['Skal vurderes','Skal planlægges','Under forberedelse','Afsluttet']],['priority','Prioritet','select',PRI],['description','Historisk betydning','textarea'],['angle','Mulig vinkel','textarea']],
+  cols:[['title','Begivenhed','b'],['_next','Næste mærkedag'],['date','Dato','d'],['area','Sted'],['status','Status']],sort:'_nextDate'},
+ accreditation:{one:'akkreditering',view:'akkrediteringer',label:'Akkrediteringer',prefix:'AKK',name:e=>e.event,
+  fields:[['event','Arrangement','text',0,1],['type','Type','select',['Kultur','Sport','Festival','Koncert','Kamp','Andet']],['area','Område','text'],['opens','Åbner','date'],['deadline','Frist','date',0,1],['status','Status','select',['Ikke ansøgt','Ansøgt','Godkendt','Afvist']],['applicant','Ansøgt af','text'],['contact','Pressekontakt','text'],['link','Ansøgningslink','url'],['rules','Foto- og videoregler','textarea']],
+  cols:[['deadline','Frist','d'],['event','Arrangement','b'],['type','Type'],['status','Status'],['applicant','Ansøgt af'],['_link','Link']],sort:'deadline'},
+ sporttag:{one:'sportstag',view:'sport',label:'Sportstags',prefix:'TAG',name:e=>e.name,
+  fields:[['name','Klub eller tag','text',0,1],['sport','Sportsgren','text'],['type','Type','select',['Klub','Turnering','Liga','Sportsgren','Hjemmekamp','Udekamp','Derby','Andet']],['area','Område','text']],
+  cols:[['name','Navn','b'],['sport','Sportsgren'],['type','Type'],['area','Område']]},
+ followup:{one:'opfølgning',view:'opfoelgninger',label:'Opfølgninger',prefix:'OPF',name:e=>e.title,
+  fields:[['title','Titel','text',0,1],['date','Planlagt dato','date',0,1],['interval','Interval','select',['3 måneder','6 måneder','1 år','2 år','3 år','5 år','10 år','Egen dato']],['trigger','Udløserdato','date'],['status','Status','select',['Skal vurderes','Skal planlægges','Under arbejde','Udgivet','Droppet']],['priority','Prioritet','select',PRI],['sourceType','Kildetype','text'],['sourceId','Kilde-ID','text'],['angle','Forslag til vinkel','textarea']],
+  cols:[['date','Dato','d'],['title','Titel','b'],['interval','Interval'],['status','Status'],['priority','Prioritet']],sort:'date'},
+ story:{one:'historie',view:'daekning',label:'Tidligere dækning',prefix:'HIS',name:e=>e.title,
+  fields:[['title','Rubrik','text',0,1],['date','Udgivet','date'],['journalist','Journalist','text'],['platform','Medie/platform','text'],['url','URL','url'],['note','Note eller vinkel','textarea']],
+  cols:[['date','Dato','d'],['title','Rubrik','b'],['journalist','Journalist'],['platform','Platform'],['_link','Link']],sort:'-date'},
+ task:{one:'opgave',view:'opgaver',label:'Opgaver',prefix:'OPG',name:e=>e.task,
+  fields:[['task','Opgave','text',0,1],['deadline','Deadline','date'],['owner','Ansvarlig','text'],['status','Status','select',['Ikke startet','I gang','Afventer','Færdig','Droppet']],['priority','Prioritet','select',PRI],['note','Note','textarea']],
+  cols:[['deadline','Deadline','d'],['task','Opgave','b'],['owner','Ansvarlig'],['status','Status'],['priority','Prioritet']],sort:'deadline'}
+};
+const VIEWS=[['oversigt','Overblik'],['aarshjul','Årshjul'],...Object.entries(KINDS).map(([k,K])=>[K.view,K.label,k])];
+
+/* ---------- data: lokal cache + Dropbox ---------- */
+const DROPBOX_APP_KEY=''; // ← indsæt jeres Dropbox "App key" her. Den er ikke hemmelig.
+const LS={get:(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del:k=>{try{localStorage.removeItem(k)}catch(e){}}};
+const safe=s=>String(s).replace(/[^A-Za-z0-9_.~:@+-]/g,'_').slice(0,150)||'x';
+const keyOf=e=>e.kind+'~'+safe(e.id);
+const newId=p=>p+'-'+Date.now().toString(36).toUpperCase()+Math.random().toString(36).slice(2,5).toUpperCase();
+let cfg=Object.assign({appKey:'',path:'/Redaktionelt_Aarshjul.xlsx'},LS.get('aarshjul-cfg',{}));
+const appKey=()=>DROPBOX_APP_KEY||cfg.appKey;
+let tok=LS.get('aarshjul-dbx',null);
+let entries=new Map(LS.get('aarshjul-v2',[]).filter(e=>e&&KINDS[e.kind]).map(e=>[keyOf(e),e]));
+let pending=new Map(LS.get('aarshjul-pending',[]));
+let rev=LS.get('aarshjul-rev',null),lastSync=null,saving=false,again=false,saveTimer=null,syncErr='';
+const readOnly=false;
+const all=k=>[...entries.values()].filter(e=>e.kind===k);
+function persist(){LS.set('aarshjul-v2',[...entries.values()]);LS.set('aarshjul-pending',[...pending]);LS.set('aarshjul-rev',rev)}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function putEntry(e,quiet){const o=JSON.parse(JSON.stringify(e));o.updated=today();const k=keyOf(o);entries.set(k,o);pending.set(k,o);persist();if(!quiet)render();scheduleSave();return true}
+async function removeEntry(e){const k=keyOf(e);entries.delete(k);pending.set(k,null);persist();render();scheduleSave();return true}
+function scheduleSave(){updateSync();if(!tok)return;clearTimeout(saveTimer);saveTimer=setTimeout(syncNow,1200)}
+
+/* Dropbox: OAuth med PKCE (ingen server nødvendig) */
+const redirectUri=()=>location.origin+location.pathname.replace(/index\.html$/,'');
+const b64u=buf=>btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+async function connect(){
+  if(!appKey()){openSettings();toast('Indsæt først jeres Dropbox App key',1);return}
+  const v=b64u(crypto.getRandomValues(new Uint8Array(48))),st=b64u(crypto.getRandomValues(new Uint8Array(12)));
+  const ch=b64u(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(v)));
+  try{sessionStorage.setItem('aarshjul-pkce',JSON.stringify({v,st,hash:location.hash}))}catch(e){}
+  location.href='https://www.dropbox.com/oauth2/authorize?'+new URLSearchParams({client_id:appKey(),response_type:'code',code_challenge:ch,code_challenge_method:'S256',redirect_uri:redirectUri(),token_access_type:'offline',state:st})}
+async function tokenReq(p){const r=await fetch('https://api.dropboxapi.com/oauth2/token',{method:'POST',body:new URLSearchParams({...p,client_id:appKey()})});const j=await r.json().catch(()=>({}));if(!r.ok)throw Object.assign(new Error(j.error_description||j.error||'HTTP '+r.status),{auth:r.status===400||r.status===401});return j}
+async function finishAuth(){
+  const q=new URLSearchParams(location.search),code=q.get('code'),err=q.get('error');if(!code&&!err)return;
+  let p={};try{p=JSON.parse(sessionStorage.getItem('aarshjul-pkce')||'{}');sessionStorage.removeItem('aarshjul-pkce')}catch(e){}
+  history.replaceState(null,'',redirectUri()+(p.hash||''));route();
+  if(err){toast('Dropbox-login blev afbrudt',1);return}
+  if(!p.v||q.get('state')!==p.st){toast('Dropbox-login kunne ikke bekræftes. Prøv igen.',1);return}
+  try{const j=await tokenReq({code,grant_type:'authorization_code',code_verifier:p.v,redirect_uri:redirectUri()});tok={access:j.access_token,exp:Date.now()+j.expires_in*1000,refresh:j.refresh_token};LS.set('aarshjul-dbx',tok);rev=null;toast('Forbundet til Dropbox')}
+  catch(e){toast('Dropbox-login fejlede: '+e.message,1)}}
+async function access(force){
+  if(!tok)throw Object.assign(new Error('Ikke forbundet'),{auth:1});
+  if(!force&&Date.now()<tok.exp-60000)return tok.access;
+  const j=await tokenReq({grant_type:'refresh_token',refresh_token:tok.refresh});
+  tok={...tok,access:j.access_token,exp:Date.now()+j.expires_in*1000};LS.set('aarshjul-dbx',tok);return tok.access}
+const hjson=o=>JSON.stringify(o).replace(/[\u007f-￿]/g,c=>'\\u'+c.charCodeAt(0).toString(16).padStart(4,'0'));
+async function dbx(url,arg,body,json,retried){
+  const h={Authorization:'Bearer '+await access(retried)};
+  if(json){h['Content-Type']='application/json'}else{h['Dropbox-API-Arg']=hjson(arg);if(body)h['Content-Type']='application/octet-stream'}
+  const r=await fetch(url,{method:'POST',headers:h,body:json?JSON.stringify(arg):(body||undefined)});
+  if(r.status===401&&!retried)return dbx(url,arg,body,json,true);
+  if(r.status===401)throw Object.assign(new Error('Dropbox-adgangen er udløbet'),{auth:1});
+  if(r.status===409){const j=await r.json().catch(()=>({}));throw Object.assign(new Error(j.error_summary||'konflikt'),{summary:j.error_summary||''})}
+  if(r.status===429||r.status>=500){await sleep(1500);if(!retried)return dbx(url,arg,body,json,true)}
+  if(!r.ok){const t=await r.text().catch(()=>'');throw new Error(/scope/i.test(t)?'Dropbox-appen mangler tilladelserne files.content.read og files.content.write':'Dropbox svarede '+r.status)}
+  return r}
+async function pull(){
+  try{const r=await dbx('https://content.dropboxapi.com/2/files/download',{path:cfg.path});
+    let meta={};try{meta=JSON.parse(r.headers.get('Dropbox-API-Result')||'{}')}catch(e){}
+    const buf=await r.arrayBuffer();
+    if(!meta.rev){const m=await dbx('https://api.dropboxapi.com/2/files/get_metadata',{path:cfg.path},null,true);meta=await m.json()}
+    return{wb:XLSX.read(buf,{type:'array'}),rev:meta.rev}}
+  catch(e){if(/not_found/.test(e.summary||''))return{wb:null,rev:null};throw e}}
+async function push(wb,r){
+  const data=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+  const res=await dbx('https://content.dropboxapi.com/2/files/upload',{path:cfg.path,mode:r?{'.tag':'update',update:r}:{'.tag':'add'},autorename:false,mute:true,strict_conflict:true},new Blob([data]));
+  return(await res.json()).rev}
+function applyPending(m){for(const[k,v]of pending){if(v===null)m.delete(k);else m.set(k,v)}return m}
+async function syncNow(){
+  if(!tok||!cfg.path)return;if(!window.XLSX){syncErr='Excel-biblioteket kunne ikke indlæses';updateSync();return}
+  if(saving){again=true;return}saving=true;syncErr='';updateSync();
+  try{
+    for(let i=0;i<5;i++){
+      const snap=new Map(pending),{wb,rev:r}=await pull(),remote=wb?parseWb(wb):new Map();
+      if(!snap.size){rev=r;entries=applyPending(remote);break}
+      for(const[k,v]of snap){if(v===null)remote.delete(k);else remote.set(k,v)}
+      try{rev=await push(buildWb(remote,wb),r);for(const[k,v]of snap)if(pending.get(k)===v)pending.delete(k);entries=applyPending(remote);break}
+      catch(e){if(/conflict/.test(e.summary||'')&&i<4){await sleep(300+Math.random()*900);continue}throw e}}
+    lastSync=new Date();persist();render()}
+  catch(e){
+    if(e.auth){tok=null;LS.del('aarshjul-dbx');syncErr='Dropbox-forbindelsen er udløbet. Forbind igen.'}
+    else if(e instanceof TypeError)syncErr='Ingen forbindelse til Dropbox. Ændringer gemmes, når forbindelsen er tilbage.';
+    else syncErr='Kunne ikke gemme i Dropbox: '+e.message}
+  finally{saving=false;updateSync();if(again){again=false;syncNow()}}}
+function disconnect(){tok=null;LS.del('aarshjul-dbx');rev=null;updateSync();toast('Forbindelsen til Dropbox er afbrudt i denne browser')}
+
+/* ---------- occurrences ---------- */
+function occ(list,from,to){
+  const out=[],y0=+from.slice(0,4),y1=+to.slice(0,4);
+  const push=(e,date,title,type,group,extra={})=>{if(valid(date)&&date>=from&&date<=to)out.push({date,title,type,group,kind:e.kind,key:keyOf(e),area:e.area||'',status:e.status||'',priority:e.priority||'',...extra})};
+  for(const e of list){
+    switch(e.kind){
+    case'item':if(!valid(e.date))break;
+      if(e.repeat==='Årligt'){for(let y=y0;y<=y1;y++){const d=inYear(y,e.date);if(d>=e.date)push(e,d,e.title,e.type||'Begivenhed','event')}}
+      else push(e,e.date,e.title,e.type||'Begivenhed',e.type==='Åbning/lancering'||e.type==='Jubilæum'?'org':'event');break;
+    case'person':if(!valid(e.birth)||e.status==='Ikke relevant')break;
+      for(let y=y0;y<=y1;y++){const a=y-+e.birth.slice(0,4);if(AGES.includes(a))push(e,inYear(y,e.birth),`${e.name} fylder ${a}`,'Fødselsdag','person',{area:e.local||'',status:'',age:a})}break;
+    case'org':if(!valid(e.opened))break;
+      for(let y=y0;y<=y1;y++){const n=y-+e.opened.slice(0,4);if(ORG_MARKS.includes(n))push(e,inYear(y,e.opened),`${e.name}: ${n} år`,'Jubilæum','org',{years:n})}break;
+    case'anniversary':if(!valid(e.date))break;{
+      const marks=String(e.marks||DEF_MARKS).split(/[;,\s]+/).map(Number).filter(Boolean);
+      for(let y=y0;y<=y1;y++){const n=y-+e.date.slice(0,4);if(n>0&&(marks.includes(n)||e.annual==='Ja'))push(e,inYear(y,e.date),`${e.title}: ${n} år`,'Historisk mærkedag','mark',{years:n})}}break;
+    case'accreditation':if(e.status==='Godkendt'||e.status==='Afvist')break;
+      push(e,e.deadline,`Akkrediteringsfrist: ${e.event}`,'Akkreditering','deadline',{status:e.status||'Ikke ansøgt',priority:'Høj',due:1});
+      if(e.status!=='Ansøgt')push(e,e.opens,`Akkreditering åbner: ${e.event}`,'Akkreditering','deadline',{status:e.status||'Ikke ansøgt'});break;
+    case'followup':if(e.status==='Udgivet'||e.status==='Droppet')break;
+      push(e,e.date,e.title,'Opfølgning','deadline',{due:1});break;
+    case'task':if(e.status==='Færdig'||e.status==='Droppet')break;
+      push(e,e.deadline,`Opgave: ${e.task}`,'Opgave','deadline',{area:e.owner||'',due:1});break;
+    }}
+  return out.sort((a,b)=>a.date.localeCompare(b.date)||a.title.localeCompare(b.title,'da'))}
+const nextOf=e=>occ([e],today(),addDays(today(),365*120)).find(o=>!o.title.startsWith('Akkreditering åbner'))||null;
+const needsAction=o=>OPEN.includes(o.status)||o.priority==='Høj'||o.priority==='Akut';
+
+/* ---------- rendering helpers ---------- */
+function row(o,flag){const[y,m,d]=parts(o.date);const g=GROUPS[o.group];
+  const meta=[o.type,o.area,o.status].filter(Boolean).map(esc).join(' · ');
+  return`<button class="row" data-key="${esc(o.key)}"><span class="dt"><b>${d}</b><span>${MS[m-1]}${y!==+today().slice(0,4)?' '+y:''}</span><i style="background:${g[1]}"></i></span><span class="rt"><span class="t">${flag?`<span class="pill red">${flag}</span>`:''}${o.priority==='Akut'?'<span class="pill red">Akut</span>':o.priority==='Høj'?'<span class="pill">Høj</span>':''}${esc(o.title)}</span><span class="m">${meta}</span></span></button>`}
+const fill=(id,html,empty='Intet her')=>{$(id).innerHTML=html.length?html.join(''):`<div class="empty">${empty}</div>`};
+
+function renderDash(){
+  const t=today(),g=$('#fGroup').value,a=$('#fArea').value;
+  const base=occ([...entries.values()],addDays(t,-60),addDays(t,90));
+  const areas=[...new Set(base.map(o=>o.area).filter(Boolean))].sort((x,y)=>x.localeCompare(y,'da'));
+  $('#fArea').innerHTML='<option value="">Alle områder</option>'+areas.map(x=>`<option ${x===a?'selected':''}>${esc(x)}</option>`).join('');
+  const f=base.filter(o=>(!g||o.group===g)&&(!a||o.area===a));
+  const win=(lo,hi)=>f.filter(o=>{const d=diff(t,o.date);return d>=lo&&d<=hi});
+  const late=f.filter(o=>o.due&&o.date<t);
+  const act=win(0,30).filter(needsAction);
+  const bd=win(0,90).filter(o=>o.group==='person');
+  $('#k30').textContent=win(0,30).length;$('#kAct').textContent=act.length+late.length;$('#kBday').textContent=bd.length;$('#kLate').textContent=late.length;
+  const n30=win(0,30).length,na=act.length+late.length;
+  $('#lede').innerHTML=entries.size?`${n30} punkt${n30===1?'':'er'} de næste 30 dage – <em>${na} kræver handling</em>.`:'Årshjulet er tomt. Importér jeres Excel-fil eller opret det første punkt.';
+  const cap=(arr,n)=>arr.slice(0,n);
+  fill('#lAct',[...late.map(o=>row(o,'Overskredet')),...cap(act,12-late.length).map(o=>row(o))],'Intet presserende');
+  $('#cAct').textContent=na||'';
+  [['#l14','#c14',0,14],['#l30','#c30',15,30],['#l60','#c60',31,60],['#l90','#c90',61,90]].forEach(([l,c,lo,hi])=>{const w=win(lo,hi);$(c).textContent=w.length||'';fill(l,cap(w,12).map(o=>row(o)))});
+  const ya=addDays(t,-365),yl=[...occ([...entries.values()].filter(e=>e.kind==='item'&&e.repeat!=='Årligt'),addDays(ya,-7),addDays(ya,7)),
+    ...all('story').filter(s=>valid(s.date)&&Math.abs(diff(ya,s.date))<=7).map(s=>({date:s.date,title:s.title,type:'Dækning',group:'event',key:keyOf(s),area:s.journalist||'',status:s.platform||''}))].sort((x,y)=>x.date.localeCompare(y.date));
+  fill('#lYear',yl.map(o=>row(o)),'Intet registreret for et år siden');
+  fill('#lBday',bd.slice(0,10).map(o=>row(o)),'Ingen runde fødselsdage');
+  const st=all('story').filter(s=>valid(s.date)).sort((x,y)=>y.date.localeCompare(x.date)).slice(0,6);
+  fill('#lStory',st.map(s=>row({date:s.date,title:s.title,type:s.platform||'Dækning',group:'event',key:keyOf(s),area:s.journalist||''})),'Ingen dækning registreret');
+}
+
+/* ---------- wheel ---------- */
+let wYear=+today().slice(0,4),wMonth=+today().slice(5,7),off=new Set();
+function renderWheel(){
+  const svg=$('#wsvg'),S=$('#fig').clientWidth||560,c=S/2,N=diff(iso(wYear,1,1),iso(wYear+1,1,1));
+  const q=$('#wSearch').value.trim().toLowerCase();
+  const os=occ([...entries.values()],iso(wYear,1,1),iso(wYear,12,31)).filter(o=>!off.has(o.group)&&(!q||o.title.toLowerCase().includes(q)||o.area.toLowerCase().includes(q)));
+  const ang=f=>-Math.PI/2+f*2*Math.PI,P=(r,a)=>[(c+r*S*Math.cos(a)).toFixed(1),(c+r*S*Math.sin(a)).toFixed(1)];
+  const seg=(r1,r2,a1,a2)=>{const A=P(r2,a1),B=P(r2,a2),C=P(r1,a2),D=P(r1,a1);return`M${A}A${r2*S},${r2*S} 0 0 1 ${B}L${C}A${r1*S},${r1*S} 0 0 0 ${D}Z`};
+  let h='';
+  for(const r of Object.values(LANES))h+=`<circle cx="${c}" cy="${c}" r="${r*S}" fill="none" stroke="var(--line)" stroke-dasharray="2 4"/>`;
+  for(let m=1;m<=12;m++){
+    const a1=ang(diff(iso(wYear,1,1),iso(wYear,m,1))/N),a2=ang(diff(iso(wYear,1,1),m===12?iso(wYear+1,1,1):iso(wYear,m+1,1))/N),am=(a1+a2)/2,on=m===wMonth;
+    const cnt=os.filter(o=>+o.date.slice(5,7)===m).length,[lx,ly]=P(.425,am),[cx,cy]=P(.378,am);
+    h+=`<path class="seg" data-m="${m}" d="${seg(.35,.47,a1,a2)}" style="fill:${on?'var(--ink)':'var(--panel)'};stroke:var(--bg);stroke-width:3"><title>${MON[m-1]}: ${cnt} punkter</title></path>`;
+    h+=`<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" pointer-events="none" style="fill:${on?'var(--bg)':'var(--ink)'};font-weight:800;font-size:${Math.max(12,S*.03)}px">${MS[m-1][0].toUpperCase()+MS[m-1].slice(1)}</text>`;
+    if(cnt)h+=`<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="middle" pointer-events="none" style="fill:${on?'var(--bg)':'var(--muted)'};font-size:${Math.max(11,S*.021)}px">${cnt}</text>`}
+  const dr=Math.max(4,S*.011);
+  for(const o of os){const[x,y]=P(LANES[o.group],ang((diff(iso(wYear,1,1),o.date)+.5)/N));h+=`<circle class="dot" data-key="${esc(o.key)}" cx="${x}" cy="${y}" r="${dr}" style="fill:${GROUPS[o.group][1]};stroke:var(--bg);stroke-width:1.5"><title>${esc(fmt(o.date)+' – '+o.title)}</title></circle>`}
+  const t=today();
+  if(+t.slice(0,4)===wYear){const a=ang((diff(iso(wYear,1,1),t)+.5)/N),[x1,y1]=P(.1,a),[x2,y2]=P(.485,a);h+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--red)" stroke-width="2.5" stroke-linecap="round" pointer-events="none"/><circle cx="${x2}" cy="${y2}" r="${dr*1.1}" fill="var(--red)" pointer-events="none"/>`}
+  h+=`<circle cx="${c}" cy="${c}" r="${S*.095}" style="fill:var(--bg);stroke:var(--ink);stroke-width:2"/><text x="${c}" y="${c-S*.008}" text-anchor="middle" dominant-baseline="middle" style="fill:var(--ink);font-weight:800;font-size:${S*.055}px">${wYear}</text><text x="${c}" y="${c+S*.042}" text-anchor="middle" style="fill:var(--muted);font-size:${Math.max(11,S*.02)}px">${os.length} punkter</text>`;
+  svg.setAttribute('viewBox',`0 0 ${S} ${S}`);svg.innerHTML=h;
+  $('#yLbl').textContent=wYear;
+  $('#mBtns').innerHTML=MS.map((m,i)=>`<button data-m="${i+1}" class="${i+1===wMonth?'on':''}">${m[0].toUpperCase()+m.slice(1)}</button>`).join('');
+  $('#legend').innerHTML=Object.entries(GROUPS).map(([k,[l,col]])=>`<button data-g="${k}" class="${off.has(k)?'off':''}" aria-pressed="${!off.has(k)}"><i style="background:${col}"></i>${l}</button>`).join('');
+  const ml=os.filter(o=>+o.date.slice(5,7)===wMonth);
+  $('#mTitle').textContent=`${MON[wMonth-1]} ${wYear}`;$('#mCount').textContent=`${ml.length} punkt${ml.length===1?'':'er'}`;
+  fill('#mList',ml.map(o=>row(o)),'Ingen punkter i denne måned');
+}
+
+/* ---------- registers ---------- */
+let curView='oversigt';
+function renderRegister(){
+  const kind=VIEWS.find(v=>v[0]===curView)?.[2];if(!kind)return;const K=KINDS[kind];
+  const q=$('#rSearch').value.trim().toLowerCase();
+  let rows=all(kind).map(e=>{const n=['person','org','anniversary'].includes(kind)?nextOf(e):null;return{e,n}}).filter(({e})=>!q||JSON.stringify(e).toLowerCase().includes(q));
+  const s=K.sort;
+  rows.sort((a,b)=>{if(!s)return K.name(a.e).localeCompare(K.name(b.e),'da');if(s==='_nextDate')return(a.n?.date||'9999').localeCompare(b.n?.date||'9999');if(s==='-date')return(b.e.date||'').localeCompare(a.e.date||'');return(a.e[s]||'9999').localeCompare(b.e[s]||'9999')});
+  const cell=(e,n,[f,,t])=>{
+    if(f==='_next')return n?esc(kind==='person'?`${n.age} år · ${fmt(n.date)}`:`${n.years} år · ${fmt(n.date)}`):'';
+    if(f==='_link'){const u=e.url||e.link;return/^https?:\/\//i.test(u||'')?`<a href="${esc(u)}" target="_blank" rel="noopener">Åbn</a>`:''}
+    if(t==='d')return esc(fmt(e[f]));if(t==='b')return`<b>${esc(e[f])}</b>`;return esc(e[f])};
+  $('#rBody').innerHTML=rows.length?`<table class="table stack"><thead><tr>${K.cols.map(c=>`<th>${c[1]}</th>`).join('')}</tr></thead><tbody>${rows.map(({e,n})=>`<tr data-key="${esc(keyOf(e))}" tabindex="0">${K.cols.map(c=>`<td class="${c[2]==='d'?'d':''}">${cell(e,n,c)}</td>`).join('')}</tr>`).join('')}</tbody></table><p class="hint">${rows.length} ${rows.length===1?K.one:K.label.toLowerCase()}</p>`
+    :`<div class="empty">${q?'Ingen match på søgningen.':`Ingen ${K.label.toLowerCase()} endnu. Opret den første, eller importér fra Excel.`}</div>`;
+}
+
+function renderNav(){$('#nav').innerHTML=VIEWS.map(([id,l,k])=>`<a href="#${id}" class="${id===curView?'on':''}">${l}${k?`<i>${all(k).length||''}</i>`:''}</a>`).join('')}
+function render(){renderNav();if(curView==='oversigt')renderDash();else if(curView==='aarshjul')renderWheel();else renderRegister()}
+function route(){const h=location.hash.slice(1);curView=VIEWS.some(v=>v[0]===h)?h:'oversigt';const reg=!['oversigt','aarshjul'].includes(curView);
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on',v.id===(reg?'v-register':'v-'+curView)));
+  $('#vtitle').textContent=VIEWS.find(v=>v[0]===curView)[1];if(reg){$('#rSearch').value='';$('#rSearch').placeholder='Søg i '+$('#vtitle').textContent.toLowerCase()}render()}
+
+/* ---------- editor ---------- */
+let editing=null;
+function openEditor(kind,obj,preset={}){
+  const K=KINDS[kind],v={...preset,...(obj||{})};editing={kind,orig:obj||null};
+  $('#dTitle').textContent=(obj?'Redigér ':'Opret ')+K.one;
+  $('#dBody').innerHTML=(obj?'':`<div class="fld full" style="margin-bottom:14px"><label for="kindSel">Hvad vil du oprette?</label><select class="inp" id="kindSel">${Object.entries(KINDS).map(([k,x])=>`<option value="${k}" ${k===kind?'selected':''}>${x.one[0].toUpperCase()+x.one.slice(1)}</option>`).join('')}</select></div>`)+
+   `<form class="form" id="eform">${K.fields.map(([f,l,t,o,req])=>{const val=v[f]??'';const id='f_'+f;
+     const inp=t==='select'?`<select class="inp" id="${id}" name="${f}">${o.map(x=>`<option ${x===val?'selected':''}>${esc(x)}</option>`).join('')}</select>`:t==='textarea'?`<textarea class="inp" id="${id}" name="${f}">${esc(val)}</textarea>`:`<input class="inp" id="${id}" name="${f}" type="${t}" value="${esc(val)}" ${req?'required':''}>`;
+     return`<div class="fld ${t==='textarea'?'full':''}"><label for="${id}">${l}${req?' <b>*</b>':''}</label>${inp}</div>`}).join('')}</form>`+
+   (obj?`<p class="hint">ID ${esc(obj.id)}${obj.updated?' · senest ændret '+esc(fmt(obj.updated)):''}${obj.followMade?' · opfølgning er oprettet':''}</p>`:'');
+  $('#dFoot').innerHTML=`<span>${obj?'<button class="btn danger" id="dDel">Slet</button>':''}</span><span class="acts"><button class="btn ghost" id="dCancel">Annullér</button><button class="btn pri" id="dSave">Gem</button></span>`;
+  showDrawer();
+  setTimeout(()=>$('#eform [name]')?.focus(),60);
+}
+function closeEditor(){$('#drawer').classList.remove('on');$('#scrim').classList.remove('on');$('#drawer').setAttribute('aria-hidden','true');editing=null}
+async function saveEditor(){
+  if(!editing)return;if(readOnly){toast('Du har kun læseadgang.',1);return}
+  const K=KINDS[editing.kind],fd=new FormData($('#eform')),o={...(editing.orig||{}),kind:editing.kind};
+  for(const[f,,t]of K.fields)o[f]=String(fd.get(f)??'').trim();
+  const miss=K.fields.filter(x=>x[4]&&!o[x[0]]);if(miss.length){toast('Udfyld: '+miss.map(x=>x[1]).join(', '),1);$('#f_'+miss[0][0]).focus();return}
+  if(!o.id)o.id=newId(K.prefix);
+  const base=o.kind==='org'?o.opened:o.date,months=FOLLOW[o.follow]||[],mk=months.length&&valid(base)&&!o.followMade;
+  if(mk)o.followMade=true;
+  $('#dSave').disabled=true;const ok=await putEntry(o);$('#dSave').disabled=false;if(!ok)return;
+  if(mk){const nm=K.name(o);for(const m of months){const lbl=m%12?m+' måneder':(m/12)+' år';
+    await putEntry({kind:'followup',id:newId('OPF'),title:`${lbl} siden: ${nm}`,date:addMonths(base,m),interval:lbl,trigger:base,status:'Skal vurderes',priority:'Mellem',sourceType:K.one,sourceId:o.id,angle:'Hvordan er det gået siden, og er forventningerne blevet indfriet?'},1)}}
+  const wasEdit=!!editing.orig;closeEditor();toast(wasEdit?'Ændringer gemt':`${K.one[0].toUpperCase()+K.one.slice(1)} oprettet${mk?' med opfølgning':''}`);render()}
+
+/* ---------- excel ---------- */
+const nk=k=>String(k||'').trim().toLowerCase().replace(/[._-]/g,' ').replace(/\s+/g,' ');
+function rowsOf(wb,names){const n=names.find(x=>wb.Sheets[x]);if(!n)return[];return XLSX.utils.sheet_to_json(wb.Sheets[n],{defval:'',raw:true}).map(r=>{const o={};for(const[k,v]of Object.entries(r))o[nk(k)]=v;return o})}
+const pk=(r,...ks)=>{for(const k of ks){const v=r[nk(k)];if(v!==undefined&&v!==null&&String(v).trim()!=='')return typeof v==='string'?v.trim():v}return''};
+function xd(v){if(v===''||v==null)return'';if(typeof v==='number'){const p=XLSX.SSF.parse_date_code(v);return p?iso(p.y,p.m,p.d):''}if(v instanceof Date)return iso(v.getFullYear(),v.getMonth()+1,v.getDate());
+  const t=String(v).trim();let m=t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);if(m)return iso(+m[1],+m[2],+m[3]);m=t.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/);return m?iso(+m[3],+m[2],+m[1]):''}
+const SHEETS=[
+ ['item','Årshjulspunkter',['Årshjulspunkter','Årshjul','Begivenheder'],r=>({id:pk(r,'ID','Punkt-ID','Punkt ID'),title:pk(r,'Titel','Begivenhed','Navn'),type:pk(r,'Type','Kategori')||'Begivenhed',date:xd(pk(r,'Startdato','Dato','Start dato')),end:xd(pk(r,'Slutdato','Slut dato')),repeat:/årl/i.test(String(pk(r,'Gentagelse')))?'Årligt':'Engangs',area:pk(r,'Område','Sted/område','Sted'),topic:pk(r,'Emne','Tema'),owner:pk(r,'Ansvarlig','Journalist'),status:pk(r,'Status')||'Idé',priority:pk(r,'Prioritet')||'Mellem',tags:pk(r,'Tags'),follow:pk(r,'Opfølgning')||'Ingen',followMade:pk(r,'Opfølgning oprettet')==='Ja',updated:xd(pk(r,'Senest ændret')),angle:pk(r,'Journalistisk vinkel','Vinkel'),description:pk(r,'Beskrivelse')}),
+  e=>({ID:e.id,Titel:e.title,Type:e.type,Startdato:e.date,Slutdato:e.end,Måned:valid(e.date)?+e.date.slice(5,7):'',Område:e.area,Emne:e.topic,Beskrivelse:e.description,'Journalistisk vinkel':e.angle,Ansvarlig:e.owner,Status:e.status,Prioritet:e.priority,Gentagelse:e.repeat,Tags:e.tags,Opfølgning:e.follow,'Opfølgning oprettet':e.followMade?'Ja':'','Senest ændret':e.updated})],
+ ['person','Personligheder',['Personligheder','Personer'],r=>({id:pk(r,'Person-ID','Person ID','ID'),name:pk(r,'Navn'),birth:xd(pk(r,'Fødselsdato','Fødsels dato')),known:pk(r,'Kendt for','Stilling'),local:pk(r,'Lokal tilknytning','Område'),status:pk(r,'Status')||'Aktiv'}),
+  e=>({'Person-ID':e.id,Navn:e.name,Fødselsdato:e.birth,'Kendt for':e.known,'Lokal tilknytning':e.local,Status:e.status})],
+ ['org','Organisationer',['Organisationer'],r=>({id:pk(r,'Org-ID','Org ID','ID'),name:pk(r,'Navn'),type:pk(r,'Type'),opened:xd(pk(r,'Grundlagt/åbnet','Grundlagt eller åbnet','Åbningsdato')),area:pk(r,'Område'),address:pk(r,'Adresse'),description:pk(r,'Beskrivelse'),follow:pk(r,'Opfølgning')||'Ingen',followMade:pk(r,'Opfølgning oprettet')==='Ja'}),
+  e=>({'Org-ID':e.id,Navn:e.name,Type:e.type,'Grundlagt/åbnet':e.opened,Område:e.area,Adresse:e.address,Beskrivelse:e.description,Opfølgning:e.follow,'Opfølgning oprettet':e.followMade?'Ja':''})],
+ ['anniversary','Historiske mærkedage',['Historiske mærkedage'],r=>({id:pk(r,'Mærkedag-ID','Mærkedag ID','ID'),title:pk(r,'Begivenhed','Titel'),date:xd(pk(r,'Oprindelig dato','Dato')),area:pk(r,'Sted/område','Område'),description:pk(r,'Beskrivelse'),angle:pk(r,'Mulig vinkel','Vinkel'),marks:pk(r,'Jubilæumsår'),annual:pk(r,'Vis hvert år')==='Ja'?'Ja':'Nej',status:pk(r,'Status')||'Skal vurderes',priority:pk(r,'Prioritet')||'Mellem'}),
+  e=>({'Mærkedag-ID':e.id,Begivenhed:e.title,'Oprindelig dato':e.date,'Sted/område':e.area,Beskrivelse:e.description,'Mulig vinkel':e.angle,Jubilæumsår:e.marks,'Vis hvert år':e.annual,Status:e.status,Prioritet:e.priority})],
+ ['accreditation','Akkrediteringer',['Akkrediteringer'],r=>({id:pk(r,'Akkrediterings-ID','Akkrediterings ID','ID'),event:pk(r,'Arrangement','Begivenhed'),type:pk(r,'Type'),area:pk(r,'Område'),opens:xd(pk(r,'Åbner dato','Åbner')),deadline:xd(pk(r,'Frist','Akkrediteringsfrist')),status:pk(r,'Status')||'Ikke ansøgt',applicant:pk(r,'Ansøgt af'),link:pk(r,'Ansøgningslink','Link'),contact:pk(r,'Pressekontakt'),rules:pk(r,'Foto-/videoregler')}),
+  e=>({'Akkrediterings-ID':e.id,Arrangement:e.event,Type:e.type,Område:e.area,'Åbner dato':e.opens,Frist:e.deadline,Status:e.status,'Ansøgt af':e.applicant,Ansøgningslink:e.link,Pressekontakt:e.contact,'Foto-/videoregler':e.rules})],
+ ['sporttag','Tags',['Tags','Sportstags'],r=>({id:pk(r,'Tag-ID','Tag ID','ID'),name:pk(r,'Navn'),sport:pk(r,'Sportsgren'),type:pk(r,'Type'),area:pk(r,'Område')}),
+  e=>({'Tag-ID':e.id,Navn:e.name,Sportsgren:e.sport,Type:e.type,Område:e.area})],
+ ['story','Historier',['Historier'],r=>({id:pk(r,'Historie-ID','Historie ID','ID'),title:pk(r,'Rubrik','Titel'),date:xd(pk(r,'Udgivelsesdato','Dato')),journalist:pk(r,'Journalist'),platform:pk(r,'Medie/platform','Platform'),url:pk(r,'URL','Link'),note:pk(r,'Kort note/vinkel','Note','Vinkel')}),
+  e=>({'Historie-ID':e.id,Rubrik:e.title,Udgivelsesdato:e.date,Journalist:e.journalist,'Medie/platform':e.platform,URL:e.url,'Kort note/vinkel':e.note})],
+ ['followup','Opfølgninger',['Opfølgninger'],r=>({id:pk(r,'Opfølgnings-ID','Opfølgnings ID','ID'),sourceType:pk(r,'Kilde type'),sourceId:pk(r,'Kilde ID'),title:pk(r,'Titel'),trigger:xd(pk(r,'Udløserdato')),interval:pk(r,'Interval'),date:xd(pk(r,'Planlagt dato','Dato')),angle:pk(r,'Forslag til vinkel','Vinkel'),status:pk(r,'Status')||'Skal vurderes',priority:pk(r,'Prioritet')||'Mellem'}),
+  e=>({'Opfølgnings-ID':e.id,'Kilde type':e.sourceType,'Kilde ID':e.sourceId,Titel:e.title,Udløserdato:e.trigger,Interval:e.interval,'Planlagt dato':e.date,'Forslag til vinkel':e.angle,Status:e.status,Prioritet:e.priority})],
+ ['task','Opgaver',['Opgaver'],r=>({id:pk(r,'Opgave-ID','Opgave ID','ID'),task:pk(r,'Opgave','Titel'),deadline:xd(pk(r,'Deadline','Dato')),owner:pk(r,'Ansvarlig'),status:pk(r,'Status')||'Ikke startet',priority:pk(r,'Prioritet')||'Mellem',note:pk(r,'Note')}),
+  e=>({'Opgave-ID':e.id,Opgave:e.task,Deadline:e.deadline,Ansvarlig:e.owner,Status:e.status,Prioritet:e.priority,Note:e.note})]];
+const hash=t=>{let h=5381;for(let i=0;i<t.length;i++)h=(h*33^t.charCodeAt(i))>>>0;return h.toString(36).toUpperCase()};
+function parseWb(wb){const m=new Map();
+  for(const[kind,,names,imp]of SHEETS){for(const r of rowsOf(wb,names)){const o=imp(r);for(const k in o)if(typeof o[k]==='number')o[k]=String(o[k]);
+    const nm=KINDS[kind].name(o);if(!o.id&&!nm)continue;o.kind=kind;
+    if(!o.id)o.id=KINDS[kind].prefix+'-X'+hash(JSON.stringify(o));
+    const base=o.id;let i=2;while(m.has(keyOf(o)))o.id=base+'-'+i++;m.set(keyOf(o),o)}}
+  return m}
+function buildWb(map,base){const wb=base||XLSX.utils.book_new(),list=[...map.values()];
+  for(const[kind,sheet,names,,exp]of SHEETS){
+    const rows=list.filter(e=>e.kind===kind).sort((a,b)=>String(a.id).localeCompare(String(b.id))).map(e=>{const r=exp(e);for(const k in r)if(r[k]==null)r[k]='';return r});
+    const ws=rows.length?XLSX.utils.json_to_sheet(rows):XLSX.utils.aoa_to_sheet([Object.keys(exp({}))]);
+    const name=names.find(n=>wb.Sheets[n])||sheet;
+    if(wb.Sheets[name]){ws['!cols']=wb.Sheets[name]['!cols'];wb.Sheets[name]=ws}else XLSX.utils.book_append_sheet(wb,ws,name)}
+  return wb}
+let importList=null;
+async function readFile(file){
+  if(!window.XLSX){toast('Excel-biblioteket kunne ikke indlæses.',1);return}
+  try{const list=[...parseWb(XLSX.read(await file.arrayBuffer(),{type:'array'})).values()];
+    if(!list.length){toast('Fandt ingen genkendelige ark i '+file.name,1);return}
+    importList=list;const counts=Object.keys(KINDS).map(k=>[k,list.filter(e=>e.kind===k)]).filter(x=>x[1].length);
+    const exists=list.filter(e=>entries.has(keyOf(e))).length;
+    editing=null;$('#dTitle').textContent='Importér fra Excel';
+    $('#dBody').innerHTML=`<p><b>${esc(file.name)}</b></p><div class="imp"><table>${counts.map(([k,l])=>`<tr><td>${KINDS[k].label}</td><td>${l.length}</td></tr>`).join('')}</table></div><p class="hint">${exists?`${exists} poster findes allerede og bliver opdateret. `:''}Posterne lægges ind i årshjulet${tok?' og gemmes i Excel-filen på Dropbox':''}.</p>`;
+    $('#dFoot').innerHTML=`<span></span><span class="acts"><button class="btn ghost" id="dCancel">Annullér</button><button class="btn pri" id="dImport">Importér ${list.length} poster</button></span>`;
+    showDrawer()}catch(err){toast('Filen kunne ikke læses: '+err.message,1)}}
+async function doImport(){if(!importList)return;for(const e of importList)await putEntry(e,1);const n=importList.length;importList=null;closeEditor();render();toast(`${n} poster importeret`)}
+function doExport(){
+  if(!window.XLSX){toast('Excel-biblioteket kunne ikke indlæses.',1);return}
+  const data=XLSX.write(buildWb(entries,null),{bookType:'xlsx',type:'array'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));a.download=`Redaktionelt_Aarshjul_${today()}.xlsx`;
+  document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000)}
+
+/* ---------- Dropbox-indstillinger ---------- */
+function openSettings(){
+  editing=null;$('#dTitle').textContent='Dropbox';
+  $('#dBody').innerHTML=`<p><b>${tok?'Forbundet':'Ikke forbundet'}</b> · ${esc(syncText())}</p>
+  <form class="form" id="sform">
+   <div class="fld full"><label for="sKey">Dropbox App key</label><input class="inp" id="sKey" value="${esc(appKey())}" ${DROPBOX_APP_KEY?'readonly':''} placeholder="fx abc123xyz"></div>
+   <div class="fld full"><label for="sPath">Sti til Excel-filen i Dropbox</label><input class="inp" id="sPath" value="${esc(cfg.path)}" placeholder="/Redaktion/Redaktionelt_Aarshjul.xlsx"></div>
+  </form>
+  <p class="hint">Stien skal starte med / og pege på en fil i en mappe, som alle på redaktionen har adgang til. Findes filen ikke, opretter appen den.</p>
+  <h3 style="font-size:17px;margin:22px 0 8px">Første opsætning (én gang for hele redaktionen)</h3>
+  <ol style="padding-left:20px;margin:0;font-size:15px">
+   <li>Gå til dropbox.com/developers/apps og vælg <b>Create app</b> → <b>Scoped access</b> → <b>Full Dropbox</b>.</li>
+   <li>Under <b>Permissions</b>: slå <b>files.content.read</b> og <b>files.content.write</b> til, og tryk <b>Submit</b>.</li>
+   <li>Under <b>Settings → OAuth 2 → Redirect URIs</b> tilføjes præcis denne adresse:<br><code style="display:block;margin:6px 0;padding:8px;background:var(--panel);border-radius:4px">${esc(redirectUri())}</code></li>
+   <li>Kopiér <b>App key</b> ind i feltet ovenfor. Kan kolleger ikke forbinde, fordi appen har nået Dropbox' brugergrænse for udviklingsapps, skal I søge om <b>Production status</b> under Settings.</li>
+  </ol>`;
+  $('#dFoot').innerHTML=`<span>${tok?'<button class="btn danger" id="sOff">Afbryd forbindelse</button>':''}</span><span class="acts">${tok?'<button class="btn ghost" id="sSync">Synkronisér nu</button>':''}<button class="btn pri" id="sSave">${tok?'Gem':'Gem og forbind'}</button></span>`;
+  showDrawer()}
+function saveSettings(){
+  const key=$('#sKey').value.trim();let p=$('#sPath').value.trim();if(p&&!p.startsWith('/'))p='/'+p;
+  if(!p||!/\.xlsx$/i.test(p)){toast('Stien skal ende på .xlsx',1);return}
+  const changed=p!==cfg.path;cfg={appKey:key,path:p};LS.set('aarshjul-cfg',cfg);
+  if(changed){rev=null;if(tok)pending=new Map([...entries].concat([...pending]))}
+  persist();closeEditor();if(!tok)connect();else{toast('Indstillinger gemt');syncNow()}}
+
+/* ---------- ui ---------- */
+let tt;function toast(m,err){const t=$('#toast');t.textContent=m;t.className='toast on'+(err?' err':'');clearTimeout(tt);tt=setTimeout(()=>t.className='toast',3600)}
+function banner(m){const b=$('#banner');b.textContent=m;b.classList.toggle('on',!!m)}
+const hm=d=>pad(d.getHours())+':'+pad(d.getMinutes());
+function syncText(){if(syncErr)return syncErr;if(!tok)return'Ikke forbundet til Dropbox'+(pending.size?` · ${pending.size} ændring${pending.size===1?'':'er'} kun i denne browser`:'');if(saving)return'Synkroniserer med Dropbox…';if(pending.size)return`${pending.size} ændring${pending.size===1?'':'er'} venter på at blive gemt`;return lastSync?`Dropbox · gemt ${hm(lastSync)}`:'Dropbox · forbundet'}
+function updateSync(){const s=$('#sync');s.textContent=syncText();s.className='sync'+(syncErr?' bad':(!tok||saving||pending.size)?' warn':'');
+  const b=$('#banner');if(!tok){b.innerHTML=`Årshjulet er ikke forbundet til Excel-filen på Dropbox, så ændringer gemmes kun i denne browser. <button class="btn pri" id="bConnect" style="margin-left:8px">Forbind Dropbox</button>`;b.classList.add('on')}else if(syncErr){b.textContent=syncErr;b.classList.add('on')}else b.classList.remove('on')}
+function showDrawer(){$('#drawer').classList.add('on');$('#scrim').classList.add('on');$('#drawer').setAttribute('aria-hidden','false')}
+function openKey(k){const e=entries.get(k);if(e)openEditor(e.kind,e)}
+document.addEventListener('click',e=>{
+  const r=e.target.closest('[data-key]');if(r&&!e.target.closest('a')){openKey(r.dataset.key);return}
+  const id=e.target.closest('button')?.id;
+  if(id==='dClose'||id==='dCancel'||e.target.id==='scrim'){importList=null;closeEditor()}
+  else if(id==='sync'||id==='bConnect'&&appKey()===''){openSettings()}
+  else if(id==='bConnect')connect();
+  else if(id==='sSave')saveSettings();
+  else if(id==='sSync'){closeEditor();syncNow()}
+  else if(id==='sOff'){disconnect();closeEditor()}
+  else if(id==='dSave')saveEditor();
+  else if(id==='dImport')doImport();
+  else if(id==='dDel'){const b=$('#dDel');if(!b.classList.contains('arm')){b.classList.add('arm');b.textContent='Bekræft sletning';setTimeout(()=>{if(b.isConnected){b.classList.remove('arm');b.textContent='Slet'}},4000)}else{const o=editing?.orig;if(o)removeEntry(o).then(ok=>{if(ok){closeEditor();toast('Slettet')}})}}
+  const m=e.target.closest('[data-m]');if(m){wMonth=+m.dataset.m;renderWheel()}
+  const g=e.target.closest('[data-g]');if(g){off.has(g.dataset.g)?off.delete(g.dataset.g):off.add(g.dataset.g);renderWheel()}
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#drawer').classList.contains('on')){importList=null;closeEditor()}if(e.key==='Enter'&&e.target.matches('tr[data-key]'))openKey(e.target.dataset.key)});
+document.addEventListener('change',e=>{if(e.target.id==='kindSel')openEditor(e.target.value,null)});
+document.addEventListener('submit',e=>{e.preventDefault();if(e.target.id==='sform')saveSettings();else saveEditor()});
+$('#btnNew').onclick=()=>{const k=VIEWS.find(v=>v[0]===curView)?.[2]||'item';openEditor(k,null,curView==='aarshjul'?{date:iso(wYear,wMonth,wMonth===+today().slice(5,7)&&wYear===+today().slice(0,4)?+today().slice(8):1)}:{})};
+$('#rNew').onclick=()=>openEditor(VIEWS.find(v=>v[0]===curView)?.[2]||'item',null);
+$('#btnImport').onclick=()=>$('#file').click();
+$('#file').onchange=e=>{const f=e.target.files[0];e.target.value='';if(f)readFile(f)};
+$('#btnExport').onclick=doExport;
+$('#yPrev').onclick=()=>{wYear--;renderWheel()};$('#yNext').onclick=()=>{wYear++;renderWheel()};
+$('#yNow').onclick=()=>{wYear=+today().slice(0,4);wMonth=+today().slice(5,7);renderWheel()};
+$('#wSearch').oninput=renderWheel;$('#rSearch').oninput=renderRegister;$('#fGroup').onchange=renderDash;$('#fArea').onchange=renderDash;
+$('#fGroup').innerHTML+=Object.entries(GROUPS).map(([k,[l]])=>`<option value="${k}">${l}</option>`).join('');
+const wheelRO=new ResizeObserver(()=>{if(curView==='aarshjul')renderWheel()});wheelRO.observe($('#fig'));
+window.addEventListener('hashchange',route);
+
+/* ---------- start ---------- */
+route();updateSync();
+(async()=>{await finishAuth();updateSync();render();if(tok)syncNow()})();
+setInterval(()=>{if(tok&&!document.hidden)syncNow()},60000);
+window.addEventListener('focus',()=>{if(tok)syncNow()});
+window.addEventListener('beforeunload',e=>{if(tok&&(saving||pending.size)){e.preventDefault();e.returnValue=''}});
+}
+</script>
+</body>
+</html>
