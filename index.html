@@ -126,7 +126,7 @@ table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-bl
 <body>
 <div class="app">
 <aside class="side">
-  <div class="brand"><svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><g fill="none" stroke-width="6"><path d="M17 4a13 13 0 0 1 13 13" stroke="#7fa9d6"/><path d="M30 17a13 13 0 0 1-13 13" stroke="#86c76b"/><path d="M17 30A13 13 0 0 1 4 17" stroke="#e9bd4c"/><path d="M4 17A13 13 0 0 1 17 4" stroke="#e38a52"/></g><path d="M17 17 25 8" stroke="#ff7a57" stroke-width="2.2" stroke-linecap="round"/><circle cx="17" cy="17" r="2.4" fill="#fff"/></svg><div><b>Redaktionens hukommelse</b><span>Version 2.9 | Udviklet af RH 🤓</span></div></div>
+  <div class="brand"><svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><g fill="none" stroke-width="6"><path d="M17 4a13 13 0 0 1 13 13" stroke="#7fa9d6"/><path d="M30 17a13 13 0 0 1-13 13" stroke="#86c76b"/><path d="M17 30A13 13 0 0 1 4 17" stroke="#e9bd4c"/><path d="M4 17A13 13 0 0 1 17 4" stroke="#e38a52"/></g><path d="M17 17 25 8" stroke="#ff7a57" stroke-width="2.2" stroke-linecap="round"/><circle cx="17" cy="17" r="2.4" fill="#fff"/></svg><div><b>Redaktionens hukommelse</b><span>Version 2.10 | Udviklet af RH 🤓</span></div></div>
   <nav class="nav" id="nav"></nav>
   <button class="sync warn" id="sync" title="Dropbox-indstillinger: filsti og forbindelse">Forbinder…</button>
 </aside>
@@ -239,7 +239,7 @@ const KINDS={
   cols:[['_date','Dato'],['title','Titel','b'],['_cov','Dækning'],['_rep','Tilbagevendende'],['type','Type'],['area','Område'],['owner','Ansvarlig'],['status','Status'],['priority','Prioritet']],sort:'date'},
  meeting:{one:'politisk møde',view:'politik',label:'Politik',many:'møder',prefix:'POL',name:e=>e.title,
   fields:[['title','Møde','text',0,1,'Fx Byrådsmøde eller Teknik- og Miljøudvalget.'],['body','Organ','select',['Byråd','Økonomiudvalg','Fagudvalg','Regionsråd','Folketinget','Andet']],['municipality','Kommune','text'],['date','Dato','date',0,1],['time','Tidspunkt','time'],['agenda','Dagsorden offentliggøres','date',0,0,'Vises som en frist i årshjulet, så nogen husker at læse dagsordenen.'],['place','Sted','text'],['owner','Ansvarlig','text'],['status','Status','select',['Skal gennemgås','Dagsorden læst','Dækkes','Dækkes ikke','Dækket']],['priority','Prioritet','select',PRI],['agendaUrl','Link til dagsorden','url'],['minutesUrl','Link til referat','url',0,0,'Kan udelades, hvis referatet ligger samme sted som dagsordenen. To dage efter mødet viser appen "Åbn referat" i stedet for dagsordenen.'],['items','Sager på dagsordenen','textarea'],['angle','Vinkler','textarea']],
-  cols:[['date','Dato','d'],['title','Møde','b'],['municipality','Kommune'],['_cov','Dækning'],['time','Kl.','t'],['_agenda','Dagsorden/referat'],['owner','Ansvarlig'],['status','Status']],sort:'date'},
+  cols:[['date','Dato','d'],['time','Kl.','t'],['title','Møde','b'],['municipality','Kommune'],['_cov','Dækning'],['_agenda','Dagsorden/referat'],['owner','Ansvarlig'],['status','Status']],sort:'date'},
  person:{one:'personlighed',view:'personer',label:'Personligheder',prefix:'PER',name:e=>e.name,
   fields:[['name','Navn','text',0,1],['birth','Fødselsdato','date',0,1],['known','Kendt for','text'],['status','Status','select',['Aktiv','Afdød','Ikke relevant']],['local','Lokal tilknytning','textarea']],
   cols:[['name','Navn','b'],['_next','Næste runde dag'],['birth','Født','d'],['known','Kendt for'],['local','Lokal tilknytning']],sort:'_nextDate'},
