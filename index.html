@@ -594,6 +594,8 @@ window.addEventListener('hashchange',route);
 route();updateSync();
 (async()=>{await finishAuth();updateSync();render();if(tok)syncNow()})();
 setInterval(()=>{if(tok&&!document.hidden)syncNow()},60000);
+setInterval(()=>{if(tok&&pending.size&&!saving)syncNow()},15000);
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&tok&&pending.size){clearTimeout(saveTimer);syncNow()}});
 window.addEventListener('focus',()=>{if(tok)syncNow()});
 window.addEventListener('beforeunload',e=>{if(tok&&(saving||pending.size)){e.preventDefault();e.returnValue=''}});
 }
