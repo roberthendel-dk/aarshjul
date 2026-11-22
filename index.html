@@ -73,7 +73,7 @@ textarea.inp{padding:10px 12px;min-height:96px;resize:vertical;width:100%}
 .pill{display:inline-block;font-size:11.5px;font-weight:700;padding:1px 7px;border-radius:6px;background:var(--panel2);color:var(--ink);line-height:1.6}.pill.red{background:var(--red);color:var(--on)}
 .empty{color:var(--muted);font-size:14px;padding:14px 4px}
 .chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
-.chip{font-size:12px;font-weight:600;padding:2px 8px;border-radius:6px;background:var(--panel);color:var(--muted);line-height:1.5;max-width:100%}
+.chip{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:600;padding:2px 8px;border-radius:6px;background:var(--panel);color:var(--muted);line-height:1.5;max-width:100%}
 .chip.st{background:transparent;border:1px solid var(--line);color:var(--ink);font-weight:500}.chip.plan{background:var(--blue-soft);color:var(--blue)}.chip.ok{background:var(--green-soft);color:var(--green)}.chip.warn{background:var(--red-soft);color:var(--red)}
 .wheel{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:clamp(18px,3vw,36px);align-items:start}
 .wheelcard{background:var(--surface);border-radius:20px;box-shadow:var(--shadow);padding:clamp(10px,2vw,24px)}
@@ -126,7 +126,7 @@ table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-bl
 <body>
 <div class="app">
 <aside class="side">
-  <div class="brand"><svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><g fill="none" stroke-width="6"><path d="M17 4a13 13 0 0 1 13 13" stroke="#7fa9d6"/><path d="M30 17a13 13 0 0 1-13 13" stroke="#86c76b"/><path d="M17 30A13 13 0 0 1 4 17" stroke="#e9bd4c"/><path d="M4 17A13 13 0 0 1 17 4" stroke="#e38a52"/></g><path d="M17 17 25 8" stroke="#ff7a57" stroke-width="2.2" stroke-linecap="round"/><circle cx="17" cy="17" r="2.4" fill="#fff"/></svg><div><b>Redaktionens hukommelse</b><span>Version 2.4 | Udviklet af RH 🤓</span></div></div>
+  <div class="brand"><svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><g fill="none" stroke-width="6"><path d="M17 4a13 13 0 0 1 13 13" stroke="#7fa9d6"/><path d="M30 17a13 13 0 0 1-13 13" stroke="#86c76b"/><path d="M17 30A13 13 0 0 1 4 17" stroke="#e9bd4c"/><path d="M4 17A13 13 0 0 1 17 4" stroke="#e38a52"/></g><path d="M17 17 25 8" stroke="#ff7a57" stroke-width="2.2" stroke-linecap="round"/><circle cx="17" cy="17" r="2.4" fill="#fff"/></svg><div><b>Redaktionens hukommelse</b><span>Version 2.5 | Udviklet af RH 🤓</span></div></div>
   <nav class="nav" id="nav"></nav>
   <button class="sync warn" id="sync" title="Dropbox-indstillinger: filsti og forbindelse">Forbinder…</button>
 </aside>
@@ -402,11 +402,12 @@ function storyYear(x,it){if(!it||!valid(it.date))return null;const by=+it.date.s
   return best??by}
 function covInfo(o){if(o.kind!=='item'&&o.kind!=='meeting')return null;if(o.agendaOcc)return null;
   const it=entries.get(o.key),y=o.year||+o.date.slice(0,4),ys=(storiesBy[o.key]||[]).map(x=>storyYear(x,it));
-  const mine=ys.filter(v=>v===y).length,st=ys.filter(v=>v!==null&&v<y).length;
+  const mineList=(storiesBy[o.key]||[]).filter((x,i)=>ys[i]===y),mine=mineList.length,st=ys.filter(v=>v!==null&&v<y).length;
   const ts=tasksForOcc(o.key,o.year||+o.date.slice(0,4),o.rep),active=ts.filter(t=>t.status!=='Droppet'),done=active.filter(t=>t.status==='Færdig').length;
-  return{st,mine,total:active.length,done,future:(o.end||o.date)>=today()}}
+  return{st,mine,mineList,total:active.length,done,future:(o.end||o.date)>=today()}}
 function covChips(o){const c=covInfo(o);if(!c)return'';const out=[];
-  if(c.mine)out.push(`<span class="chip ok">${c.mine} ${c.mine===1?'artikel':'artikler'} om ${o.kind==='meeting'?'mødet':'begivenheden'}</span>`);
+  if(c.mine&&o.kind==='meeting'){const l=c.mineList.slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''));out.push(...l.slice(0,3).map(x=>`<span class="chip ok" title="${esc(fmt(x.date))}">Artikel: ${esc(x.title)}</span>`));if(l.length>3)out.push(`<span class="chip ok">+${l.length-3} artikler mere</span>`)}
+  else if(c.mine)out.push(`<span class="chip ok">${c.mine} ${c.mine===1?'artikel':'artikler'} om ${o.kind==='meeting'?'mødet':'begivenheden'}</span>`);
   if(c.st)out.push(`<span class="chip">${c.st} ${c.st===1?'artikel':'artikler'} fra tidligere år</span>`);
   if(c.total)out.push(`<span class="chip ${c.done===c.total?'ok':'plan'}">${c.done===c.total?'✓ ':''}Dækning planlagt: ${c.done}/${c.total} opgaver færdige</span>`);
   else if(c.future&&!c.mine&&(o.kind!=='meeting'||o.status==='Dækkes'))out.push('<span class="chip warn">Ingen dækning planlagt</span>');
