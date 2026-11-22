@@ -30,7 +30,7 @@ h1,h2,h3{font-weight:800;line-height:1.05;margin:0;text-wrap:balance}
 .acts{display:flex;flex-wrap:wrap;gap:8px}
 .btn{min-height:44px;padding:0 16px;border:1.5px solid var(--ink);background:var(--bg);border-radius:6px;cursor:pointer;font-weight:600;white-space:nowrap}
 .btn:hover{background:var(--panel)}.btn.pri{background:var(--red);border-color:var(--red);color:#fff}.btn.pri:hover{filter:brightness(1.08)}
-.btn.ghost{border-color:var(--line)}.btn.danger{border-color:var(--red);color:var(--red)}.btn.danger.arm{background:var(--red);color:#fff}
+.btn.ok{border-color:var(--c-org);color:var(--c-org)}.btn[aria-busy=true]{opacity:.7;cursor:progress}.btn.ghost{border-color:var(--line)}.btn.danger{border-color:var(--red);color:var(--red)}.btn.danger.arm{background:var(--red);color:#fff}
 :focus-visible{outline:3px solid var(--red);outline-offset:2px}
 .wrap{padding:clamp(16px,3vw,36px);max-width:1400px}
 .view{display:none}.view.on{display:block}
@@ -93,11 +93,11 @@ table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-bl
 <aside class="side">
   <div class="brand"><b>Redaktionelt Årshjul</b><span>Redaktionens hukommelse</span></div>
   <nav class="nav" id="nav"></nav>
-  <button class="sync warn" id="sync" title="Dropbox-indstillinger">Forbinder…</button>
+  <button class="sync warn" id="sync" title="Dropbox-indstillinger: filsti og forbindelse">Forbinder…</button>
 </aside>
 <main>
   <header class="top"><h1 id="vtitle">Overblik</h1>
-    <div class="acts"><button class="btn ghost" id="btnImport">Importér Excel</button><button class="btn ghost" id="btnExport">Eksportér Excel</button><button class="btn pri" id="btnNew">+ Opret</button></div>
+    <div class="acts"><button class="btn" id="btnSave">Gem i Excel</button><button class="btn ghost" id="btnImport">Importér Excel</button><button class="btn ghost" id="btnExport">Eksportér Excel</button><button class="btn pri" id="btnNew">+ Opret</button></div>
   </header>
   <div class="wrap">
     <div class="banner" id="banner"></div>
@@ -240,7 +240,7 @@ function persist(){LS.set('aarshjul-v2',[...entries.values()]);LS.set('aarshjul-
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 async function putEntry(e,quiet){const o=JSON.parse(JSON.stringify(e));o.updated=today();const k=keyOf(o);entries.set(k,o);pending.set(k,o);persist();if(!quiet)render();scheduleSave();return true}
 async function removeEntry(e){const k=keyOf(e);entries.delete(k);pending.set(k,null);persist();render();scheduleSave();return true}
-function scheduleSave(){updateSync();if(!tok)return;clearTimeout(saveTimer);saveTimer=setTimeout(syncNow,1200)}
+function scheduleSave(){updateSync();if(!tok)return;clearTimeout(saveTimer);saveTimer=setTimeout(syncNow,700)}
 
 /* Dropbox: OAuth med PKCE (ingen server nødvendig) */
 const redirectUri=()=>location.origin+location.pathname.replace(/index\.html$/,'');
@@ -545,7 +545,15 @@ let tt;function toast(m,err){const t=$('#toast');t.textContent=m;t.className='to
 function banner(m){const b=$('#banner');b.textContent=m;b.classList.toggle('on',!!m)}
 const hm=d=>pad(d.getHours())+':'+pad(d.getMinutes());
 function syncText(){if(syncErr)return syncErr;if(!tok)return'Ikke forbundet til Dropbox'+(pending.size?` · ${pending.size} ændring${pending.size===1?'':'er'} kun i denne browser`:'');if(saving)return'Synkroniserer med Dropbox…';if(pending.size)return`${pending.size} ændring${pending.size===1?'':'er'} venter på at blive gemt`;return lastSync?`Dropbox · gemt ${hm(lastSync)}`:'Dropbox · forbundet'}
-function updateSync(){const s=$('#sync');s.textContent=syncText();s.className='sync'+(syncErr?' bad':(!tok||saving||pending.size)?' warn':'');
+function updateSync(){
+  const sb=$('#btnSave');if(sb){let t,c,ti;
+    if(!tok){t='Forbind Dropbox';c='pri';ti='Forbind til Excel-filen på Dropbox, så ændringer gemmes automatisk'}
+    else if(saving){t='Gemmer…';c='';ti='Gemmer i Excel-filen på Dropbox'}
+    else if(syncErr){t='Gem igen';c='danger';ti=syncErr}
+    else if(pending.size){t=`Gem i Excel (${pending.size})`;c='pri';ti='Gem ændringerne i Excel-filen nu'}
+    else{t=lastSync?`✓ Gemt ${hm(lastSync)}`:'✓ Gemt i Excel';c='ok';ti='Alt er gemt i Excel-filen. Klik for at hente kollegernes seneste ændringer.'}
+    sb.textContent=t;sb.className='btn '+c;sb.title=ti;sb.setAttribute('aria-busy',saving?'true':'false')}
+  const s=$('#sync');s.textContent=syncText();s.className='sync'+(syncErr?' bad':(!tok||saving||pending.size)?' warn':'');
   const b=$('#banner');if(!tok){b.innerHTML=`Årshjulet er ikke forbundet til Excel-filen på Dropbox, så ændringer gemmes kun i denne browser. <button class="btn pri" id="bConnect" style="margin-left:8px">Forbind Dropbox</button>`;b.classList.add('on')}else if(syncErr){b.textContent=syncErr;b.classList.add('on')}else b.classList.remove('on')}
 function showDrawer(){$('#drawer').classList.add('on');$('#scrim').classList.add('on');$('#drawer').setAttribute('aria-hidden','false')}
 function openKey(k){const e=entries.get(k);if(e)openEditor(e.kind,e)}
@@ -553,6 +561,7 @@ document.addEventListener('click',e=>{
   const r=e.target.closest('[data-key]');if(r&&!e.target.closest('a')){openKey(r.dataset.key);return}
   const id=e.target.closest('button')?.id;
   if(id==='dClose'||id==='dCancel'||e.target.id==='scrim'){importList=null;closeEditor()}
+  else if(id==='btnSave'){if(!tok)connect();else{clearTimeout(saveTimer);syncNow()}}
   else if(id==='sync'||id==='bConnect'&&appKey()===''){openSettings()}
   else if(id==='bConnect')connect();
   else if(id==='sSave')saveSettings();
@@ -566,7 +575,7 @@ document.addEventListener('click',e=>{
   const m=e.target.closest('[data-m]');if(m){wMonth=+m.dataset.m;renderWheel()}
   const g=e.target.closest('[data-g]');if(g){off.has(g.dataset.g)?off.delete(g.dataset.g):off.add(g.dataset.g);renderWheel()}
 });
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#drawer').classList.contains('on')){importList=null;closeEditor()}if(e.key==='Enter'&&e.target.matches('tr[data-key]'))openKey(e.target.dataset.key)});
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();if(tok){clearTimeout(saveTimer);syncNow()}else connect();return}if(e.key==='Escape'&&$('#drawer').classList.contains('on')){importList=null;closeEditor()}if(e.key==='Enter'&&e.target.matches('tr[data-key]'))openKey(e.target.dataset.key)});
 document.addEventListener('change',e=>{if(e.target.id==='kindSel')openEditor(e.target.value,null)});
 document.addEventListener('submit',e=>{e.preventDefault();if(e.target.id==='sform')saveSettings();else saveEditor()});
 $('#btnNew').onclick=()=>{const k=VIEWS.find(v=>v[0]===curView)?.[2]||'item';openEditor(k,null,curView==='aarshjul'?{date:iso(wYear,wMonth,wMonth===+today().slice(5,7)&&wYear===+today().slice(0,4)?+today().slice(8):1)}:{})};
