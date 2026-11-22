@@ -126,7 +126,7 @@ table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-bl
 <body>
 <div class="app">
 <aside class="side">
-  <div class="brand"><svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><g fill="none" stroke-width="6"><path d="M17 4a13 13 0 0 1 13 13" stroke="#7fa9d6"/><path d="M30 17a13 13 0 0 1-13 13" stroke="#86c76b"/><path d="M17 30A13 13 0 0 1 4 17" stroke="#e9bd4c"/><path d="M4 17A13 13 0 0 1 17 4" stroke="#e38a52"/></g><path d="M17 17 25 8" stroke="#ff7a57" stroke-width="2.2" stroke-linecap="round"/><circle cx="17" cy="17" r="2.4" fill="#fff"/></svg><div><b>Redaktionens hukommelse</b><span>Version 2.8 | Udviklet af RH 🤓</span></div></div>
+  <div class="brand"><svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><g fill="none" stroke-width="6"><path d="M17 4a13 13 0 0 1 13 13" stroke="#7fa9d6"/><path d="M30 17a13 13 0 0 1-13 13" stroke="#86c76b"/><path d="M17 30A13 13 0 0 1 4 17" stroke="#e9bd4c"/><path d="M4 17A13 13 0 0 1 17 4" stroke="#e38a52"/></g><path d="M17 17 25 8" stroke="#ff7a57" stroke-width="2.2" stroke-linecap="round"/><circle cx="17" cy="17" r="2.4" fill="#fff"/></svg><div><b>Redaktionens hukommelse</b><span>Version 2.9 | Udviklet af RH 🤓</span></div></div>
   <nav class="nav" id="nav"></nav>
   <button class="sync warn" id="sync" title="Dropbox-indstillinger: filsti og forbindelse">Forbinder…</button>
 </aside>
@@ -172,7 +172,7 @@ table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-bl
     </section>
 
     <section class="view" id="v-register">
-      <div class="filters"><input class="inp" id="rSearch" placeholder="Søg" style="flex:1;min-width:200px"><select class="inp" id="rSort" aria-label="Sortér"></select><button class="btn" id="rPlan" hidden>Opret mødeplan</button><button class="btn pri" id="rNew">+ Opret</button></div>
+      <div class="filters"><input class="inp" id="rSearch" placeholder="Søg" style="flex:1;min-width:200px"><select class="inp" id="rMun" aria-label="Kommune" hidden></select><select class="inp" id="rSort" aria-label="Sortér"></select><button class="btn" id="rPlan" hidden>Opret mødeplan</button><button class="btn pri" id="rNew">+ Opret</button></div>
       <div id="rBody"></div>
     </section>
   </div>
@@ -493,6 +493,9 @@ function renderRegister(){
   const kind=VIEWS.find(v=>v[0]===curView)?.[2];if(!kind)return;const K=KINDS[kind];
   const q=$('#rSearch').value.trim().toLowerCase();
   let rows=all(kind).map(e=>{const n=['person','org','anniversary'].includes(kind)||(kind==='item'&&isRep(e))?nextOf(e):null;return{e,n}}).filter(({e})=>!q||JSON.stringify(e).toLowerCase().includes(q));
+  if(kind==='meeting'){const sel=$('#rMun'),cur=sel.value,muns=[...new Set(all('meeting').map(e=>e.municipality).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'da'));
+    sel.innerHTML='<option value="">Alle kommuner</option>'+muns.map(m=>`<option ${m===cur?'selected':''}>${esc(m)}</option>`).join('');
+    if(cur&&muns.includes(cur))rows=rows.filter(({e})=>e.municipality===cur)}
   const s=K.sort;
   rows.sort((a,b)=>{if(!s)return K.name(a.e).localeCompare(K.name(b.e),'da');if(s==='_nextDate')return(a.n?.date||'9999').localeCompare(b.n?.date||'9999');if(kind==='item')return((a.n||a.e).date||'9999').localeCompare((b.n||b.e).date||'9999');if(s==='-date')return(b.e.date||'').localeCompare(a.e.date||'');return(a.e[s]||'9999').localeCompare(b.e[s]||'9999')});
   const ss=sortState[kind],sortable=c=>c[0]!=='_cov';
@@ -516,7 +519,7 @@ function renderNav(){$('#nav').innerHTML=VIEWS.map(([id,l,k])=>`<a href="#${id}"
 function render(){countStories();renderNav();if(curView==='oversigt')renderDash();else if(curView==='aarshjul')renderWheel();else renderRegister()}
 function route(){$('#vsub').textContent=subtitle();if($('#drawer').classList.contains('on')){importList=null;closeEditor()}const h=location.hash.slice(1);curView=VIEWS.some(v=>v[0]===h)?h:'oversigt';const reg=!['oversigt','aarshjul'].includes(curView);
   document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on',v.id===(reg?'v-register':'v-'+curView)));
-  $('#vtitle').textContent=VIEWS.find(v=>v[0]===curView)[1];$('#rPlan').hidden=curView!=='politik';if(reg){$('#rSearch').value='';$('#rSearch').placeholder='Søg i '+$('#vtitle').textContent.toLowerCase()}render()}
+  $('#vtitle').textContent=VIEWS.find(v=>v[0]===curView)[1];$('#rPlan').hidden=curView!=='politik';$('#rMun').hidden=curView!=='politik';if(reg){$('#rSearch').value='';$('#rSearch').placeholder='Søg i '+$('#vtitle').textContent.toLowerCase()}render()}
 
 /* ---------- editor ---------- */
 let editing=null;
@@ -724,7 +727,7 @@ $('#file').onchange=e=>{const f=e.target.files[0];e.target.value='';if(f)readFil
 $('#btnExport').onclick=doExport;
 $('#yPrev').onclick=()=>{wYear--;renderWheel()};$('#yNext').onclick=()=>{wYear++;renderWheel()};
 $('#yNow').onclick=()=>{wYear=+today().slice(0,4);wMonth=+today().slice(5,7);renderWheel()};
-$('#wSearch').oninput=renderWheel;$('#rSearch').oninput=renderRegister;$('#rSort').onchange=e=>{const k=VIEWS.find(v=>v[0]===curView)?.[2],v=e.target.value;if(!v)delete sortState[k];else{const[i,dir]=v.split(':');sortState[k]={i:+i,dir}}renderRegister()};$('#fGroup').onchange=renderDash;$('#fArea').onchange=renderDash;
+$('#wSearch').oninput=renderWheel;$('#rSearch').oninput=renderRegister;$('#rMun').onchange=renderRegister;$('#rSort').onchange=e=>{const k=VIEWS.find(v=>v[0]===curView)?.[2],v=e.target.value;if(!v)delete sortState[k];else{const[i,dir]=v.split(':');sortState[k]={i:+i,dir}}renderRegister()};$('#fGroup').onchange=renderDash;$('#fArea').onchange=renderDash;
 $('#fGroup').innerHTML+=Object.entries(GROUPS).map(([k,[l]])=>`<option value="${k}">${l}</option>`).join('');
 const wheelRO=new ResizeObserver(()=>{if(curView==='aarshjul')renderWheel()});wheelRO.observe($('#fig'));
 window.addEventListener('hashchange',route);
