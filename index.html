@@ -75,8 +75,8 @@ textarea.inp{padding:10px 12px;min-height:96px;resize:vertical;width:100%}
 .db{padding:18px 20px;overflow:auto;flex:1}
 .df{display:flex;justify-content:space-between;gap:8px;padding:14px 20px;border-top:1px solid var(--line);flex-wrap:wrap}
 .form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px}
-.fld{display:grid;gap:5px}.fld.full{grid-column:1/-1}.fld label{font-size:13px;font-weight:700;color:var(--muted)}.fld label b{color:var(--red)}
-.fld .inp{width:100%}
+.fld{display:grid;gap:5px;align-content:start}.fld.full{grid-column:1/-1}.fld label{font-size:13px;font-weight:700;color:var(--muted)}.fld label b{color:var(--red)}
+.fld .inp{width:100%}.fh{font-size:13px;color:var(--muted);line-height:1.35}
 .hint{font-size:13px;color:var(--muted);margin-top:14px}
 .toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:6px;z-index:40;opacity:0;pointer-events:none;transition:.2s;max-width:90vw}.toast.on{opacity:1;transform:translate(-50%,0)}.toast.err{background:var(--red);color:#fff}
 .banner{border:1.5px solid var(--ink);border-left:6px solid var(--red);padding:12px 14px;margin-bottom:20px;display:none;font-size:15px}.banner.on{display:block}
@@ -176,6 +176,14 @@ const AGES=[18,30,40,50,60,65,70,75,80,85,90,95,100,105,110];
 const ORG_MARKS=[1,5,10,15,20,25,30,40,50,60,70,75,80,90,100,110,125,150,175,200];
 const DEF_MARKS='10;25;50;75;100;125;150;200;250';
 const PRI=['Lav','Mellem','Høj','Akut'];
+const REP=['Nej','Ja, samme dato hvert år','Ja, samme ugedag hvert år'];
+const isRep=e=>/^(Årligt|Ja)/.test(e.repeat||'');
+const repWeekday=e=>/ugedag/i.test(e.repeat||'');
+function weekdayIn(y,s){const[oy,m,d]=parts(s),wd=new Date(Date.UTC(oy,m-1,d)).getUTCDay(),last=d+7>dim(oy,m);
+  if(last){let dd=dim(y,m);while(new Date(Date.UTC(y,m-1,dd)).getUTCDay()!==wd)dd--;return iso(y,m,dd)}
+  let dd=1;while(new Date(Date.UTC(y,m-1,dd)).getUTCDay()!==wd)dd++;dd+=7*(Math.ceil(d/7)-1);return iso(y,m,Math.min(dd,dim(y,m)))}
+const WD=['søndag','mandag','tirsdag','onsdag','torsdag','fredag','lørdag'];
+function repText(e){if(!isRep(e))return'';if(!repWeekday(e))return'Hver '+fmt(e.date).replace(/ \d{4}$/,'');const[y,m,d]=parts(e.date),last=d+7>dim(y,m);return`${last?'Sidste':Math.ceil(d/7)+'.'} ${WD[new Date(Date.UTC(y,m-1,d)).getUTCDay()]} i ${MON[m-1]}`}
 const FOLLOW={'Ingen':[],'6 måneder':[6],'1 år':[12],'6 måneder + 1 år':[6,12],'1 år + 5 år':[12,60]};
 const OPEN=['Idé','Skal vurderes','Skal planlægges','Under forberedelse','Ikke ansøgt','Ikke startet','Afventer'];
 const GROUPS={event:['Begivenheder','var(--c-event)'],org:['Åbninger & jubilæer','var(--c-org)'],person:['Personligheder','var(--c-person)'],mark:['Historiske mærkedage','var(--c-mark)'],deadline:['Frister & opfølgning','var(--c-deadline)']};
@@ -183,8 +191,8 @@ const LANES={event:.305,org:.26,person:.215,mark:.17,deadline:.125};
 
 const KINDS={
  item:{one:'årshjulspunkt',view:'punkter',label:'Alle punkter',prefix:'AAR',name:e=>e.title,
-  fields:[['title','Titel','text',0,1],['type','Type','select',['Begivenhed','Åbning/lancering','Jubilæum','Projekt','Politisk frist','Sæsonhistorie','Sport','Andet']],['date','Dato','date',0,1],['end','Slutdato','date'],['repeat','Gentagelse','select',['Engangs','Årligt']],['area','Område','text'],['topic','Emne','text'],['owner','Ansvarlig','text'],['status','Status','select',['Idé','Skal planlægges','Under forberedelse','Klar til dækning','I gang','Udgivet','Skal følges op','Afventer','Afsluttet']],['priority','Prioritet','select',PRI],['follow','Opret opfølgning','select',Object.keys(FOLLOW)],['tags','Tags','text'],['angle','Journalistisk vinkel','textarea'],['description','Beskrivelse','textarea']],
-  cols:[['date','Dato','d'],['title','Titel','b'],['type','Type'],['area','Område'],['owner','Ansvarlig'],['status','Status'],['priority','Prioritet']],sort:'date'},
+  fields:[['title','Titel','text',0,1],['type','Type','select',['Begivenhed','Åbning/lancering','Jubilæum','Projekt','Politisk frist','Sæsonhistorie','Sport','Andet']],['date','Dato','date',0,1],['end','Slutdato','date'],['repeat','Årligt tilbagevendende','select',REP,0,'"Samme ugedag" passer til begivenheder, der fx altid ligger sidste lørdag i juli. Datoen ovenfor er første gang, den skal vises.'],['area','Område','text'],['topic','Emne','text'],['owner','Ansvarlig','text'],['status','Status','select',['Idé','Skal planlægges','Under forberedelse','Klar til dækning','I gang','Udgivet','Skal følges op','Afventer','Afsluttet']],['priority','Prioritet','select',PRI],['follow','Opret opfølgning','select',Object.keys(FOLLOW)],['tags','Tags','text'],['angle','Journalistisk vinkel','textarea'],['description','Beskrivelse','textarea']],
+  cols:[['_date','Dato'],['title','Titel','b'],['_rep','Tilbagevendende'],['type','Type'],['area','Område'],['owner','Ansvarlig'],['status','Status'],['priority','Prioritet']],sort:'date'},
  person:{one:'personlighed',view:'personer',label:'Personligheder',prefix:'PER',name:e=>e.name,
   fields:[['name','Navn','text',0,1],['birth','Fødselsdato','date',0,1],['known','Kendt for','text'],['status','Status','select',['Aktiv','Afdød','Ikke relevant']],['local','Lokal tilknytning','textarea']],
   cols:[['name','Navn','b'],['_next','Næste runde dag'],['birth','Født','d'],['known','Kendt for'],['local','Lokal tilknytning']],sort:'_nextDate'},
@@ -303,7 +311,7 @@ function occ(list,from,to){
   for(const e of list){
     switch(e.kind){
     case'item':if(!valid(e.date))break;
-      if(e.repeat==='Årligt'){for(let y=y0;y<=y1;y++){const d=inYear(y,e.date);if(d>=e.date)push(e,d,e.title,e.type||'Begivenhed','event')}}
+      if(isRep(e)){const dur=valid(e.end)?Math.max(0,diff(e.date,e.end)):0;for(let y=y0;y<=y1;y++){const d=repWeekday(e)?weekdayIn(y,e.date):inYear(y,e.date);if(d>=e.date)push(e,d,e.title,e.type||'Begivenhed',e.type==='Åbning/lancering'||e.type==='Jubilæum'?'org':'event',{rep:1,dur})}}
       else push(e,e.date,e.title,e.type||'Begivenhed',e.type==='Åbning/lancering'||e.type==='Jubilæum'?'org':'event');break;
     case'person':if(!valid(e.birth)||e.status==='Ikke relevant')break;
       for(let y=y0;y<=y1;y++){const a=y-+e.birth.slice(0,4);if(AGES.includes(a))push(e,inYear(y,e.birth),`${e.name} fylder ${a}`,'Fødselsdag','person',{area:e.local||'',status:'',age:a})}break;
@@ -326,8 +334,8 @@ const needsAction=o=>OPEN.includes(o.status)||o.priority==='Høj'||o.priority===
 
 /* ---------- rendering helpers ---------- */
 function row(o,flag){const[y,m,d]=parts(o.date);const g=GROUPS[o.group];
-  const meta=[o.type,o.area,o.status].filter(Boolean).map(esc).join(' · ');
-  return`<button class="row" data-key="${esc(o.key)}"><span class="dt"><b>${d}</b><span>${MS[m-1]}${y!==+today().slice(0,4)?' '+y:''}</span><i style="background:${g[1]}"></i></span><span class="rt"><span class="t">${flag?`<span class="pill red">${flag}</span>`:''}${o.priority==='Akut'?'<span class="pill red">Akut</span>':o.priority==='Høj'?'<span class="pill">Høj</span>':''}${esc(o.title)}</span><span class="m">${meta}</span></span></button>`}
+  const meta=[o.dur?`${o.dur+1} dage`:'',o.type,o.area,o.status].filter(Boolean).map(esc).join(' · ');
+  return`<button class="row" data-key="${esc(o.key)}"><span class="dt"><b>${d}</b><span>${MS[m-1]}${y!==+today().slice(0,4)?' '+y:''}</span><i style="background:${g[1]}"></i></span><span class="rt"><span class="t">${flag?`<span class="pill red">${flag}</span>`:''}${o.rep?'<span class="pill" title="Årligt tilbagevendende">↻ Årlig</span>':''}${o.priority==='Akut'?'<span class="pill red">Akut</span>':o.priority==='Høj'?'<span class="pill">Høj</span>':''}${esc(o.title)}</span><span class="m">${meta}</span></span></button>`}
 const fill=(id,html,empty='Intet her')=>{$(id).innerHTML=html.length?html.join(''):`<div class="empty">${empty}</div>`};
 
 function renderDash(){
@@ -347,7 +355,7 @@ function renderDash(){
   fill('#lAct',[...late.map(o=>row(o,'Overskredet')),...cap(act,12-late.length).map(o=>row(o))],'Intet presserende');
   $('#cAct').textContent=na||'';
   [['#l14','#c14',0,14],['#l30','#c30',15,30],['#l60','#c60',31,60],['#l90','#c90',61,90]].forEach(([l,c,lo,hi])=>{const w=win(lo,hi);$(c).textContent=w.length||'';fill(l,cap(w,12).map(o=>row(o)))});
-  const ya=addDays(t,-365),yl=[...occ([...entries.values()].filter(e=>e.kind==='item'&&e.repeat!=='Årligt'),addDays(ya,-7),addDays(ya,7)),
+  const ya=addDays(t,-365),yl=[...occ([...entries.values()].filter(e=>e.kind==='item'&&!isRep(e)),addDays(ya,-7),addDays(ya,7)),
     ...all('story').filter(s=>valid(s.date)&&Math.abs(diff(ya,s.date))<=7).map(s=>({date:s.date,title:s.title,type:'Dækning',group:'event',key:keyOf(s),area:s.journalist||'',status:s.platform||''}))].sort((x,y)=>x.date.localeCompare(y.date));
   fill('#lYear',yl.map(o=>row(o)),'Intet registreret for et år siden');
   fill('#lBday',bd.slice(0,10).map(o=>row(o)),'Ingen runde fødselsdage');
@@ -390,14 +398,16 @@ let curView='oversigt';
 function renderRegister(){
   const kind=VIEWS.find(v=>v[0]===curView)?.[2];if(!kind)return;const K=KINDS[kind];
   const q=$('#rSearch').value.trim().toLowerCase();
-  let rows=all(kind).map(e=>{const n=['person','org','anniversary'].includes(kind)?nextOf(e):null;return{e,n}}).filter(({e})=>!q||JSON.stringify(e).toLowerCase().includes(q));
+  let rows=all(kind).map(e=>{const n=['person','org','anniversary'].includes(kind)||(kind==='item'&&isRep(e))?nextOf(e):null;return{e,n}}).filter(({e})=>!q||JSON.stringify(e).toLowerCase().includes(q));
   const s=K.sort;
-  rows.sort((a,b)=>{if(!s)return K.name(a.e).localeCompare(K.name(b.e),'da');if(s==='_nextDate')return(a.n?.date||'9999').localeCompare(b.n?.date||'9999');if(s==='-date')return(b.e.date||'').localeCompare(a.e.date||'');return(a.e[s]||'9999').localeCompare(b.e[s]||'9999')});
+  rows.sort((a,b)=>{if(!s)return K.name(a.e).localeCompare(K.name(b.e),'da');if(s==='_nextDate')return(a.n?.date||'9999').localeCompare(b.n?.date||'9999');if(kind==='item')return((a.n||a.e).date||'9999').localeCompare((b.n||b.e).date||'9999');if(s==='-date')return(b.e.date||'').localeCompare(a.e.date||'');return(a.e[s]||'9999').localeCompare(b.e[s]||'9999')});
   const cell=(e,n,[f,,t])=>{
+    if(f==='_date')return esc(fmt(n?n.date:e.date));
+    if(f==='_rep')return esc(repText(e));
     if(f==='_next')return n?esc(kind==='person'?`${n.age} år · ${fmt(n.date)}`:`${n.years} år · ${fmt(n.date)}`):'';
     if(f==='_link'){const u=e.url||e.link;return/^https?:\/\//i.test(u||'')?`<a href="${esc(u)}" target="_blank" rel="noopener">Åbn</a>`:''}
     if(t==='d')return esc(fmt(e[f]));if(t==='b')return`<b>${esc(e[f])}</b>`;return esc(e[f])};
-  $('#rBody').innerHTML=rows.length?`<table class="table stack"><thead><tr>${K.cols.map(c=>`<th>${c[1]}</th>`).join('')}</tr></thead><tbody>${rows.map(({e,n})=>`<tr data-key="${esc(keyOf(e))}" tabindex="0">${K.cols.map(c=>`<td class="${c[2]==='d'?'d':''}">${cell(e,n,c)}</td>`).join('')}</tr>`).join('')}</tbody></table><p class="hint">${rows.length} ${rows.length===1?K.one:K.label.toLowerCase()}</p>`
+  $('#rBody').innerHTML=rows.length?`<table class="table stack"><thead><tr>${K.cols.map(c=>`<th>${c[1]}</th>`).join('')}</tr></thead><tbody>${rows.map(({e,n})=>`<tr data-key="${esc(keyOf(e))}" tabindex="0">${K.cols.map(c=>`<td class="${c[2]==='d'?'d':''}">${cell(e,n,c)}</td>`).join('')}</tr>`).join('')}</tbody></table><p class="hint">${rows.length} ${rows.length===1?K.one:K.label.toLowerCase().replace(/^alle /,'')}</p>`
     :`<div class="empty">${q?'Ingen match på søgningen.':`Ingen ${K.label.toLowerCase()} endnu. Opret den første, eller importér fra Excel.`}</div>`;
 }
 
@@ -413,9 +423,9 @@ function openEditor(kind,obj,preset={}){
   const K=KINDS[kind],v={...preset,...(obj||{})};editing={kind,orig:obj||null};
   $('#dTitle').textContent=(obj?'Redigér ':'Opret ')+K.one;
   $('#dBody').innerHTML=(obj?'':`<div class="fld full" style="margin-bottom:14px"><label for="kindSel">Hvad vil du oprette?</label><select class="inp" id="kindSel">${Object.entries(KINDS).map(([k,x])=>`<option value="${k}" ${k===kind?'selected':''}>${x.one[0].toUpperCase()+x.one.slice(1)}</option>`).join('')}</select></div>`)+
-   `<form class="form" id="eform">${K.fields.map(([f,l,t,o,req])=>{const val=v[f]??'';const id='f_'+f;
+   `<form class="form" id="eform">${K.fields.map(([f,l,t,o,req,hint])=>{let val=v[f]??'';if(f==='repeat')val=isRep(v)?(repWeekday(v)?REP[2]:REP[1]):REP[0];const id='f_'+f;
      const inp=t==='select'?`<select class="inp" id="${id}" name="${f}">${o.map(x=>`<option ${x===val?'selected':''}>${esc(x)}</option>`).join('')}</select>`:t==='textarea'?`<textarea class="inp" id="${id}" name="${f}">${esc(val)}</textarea>`:`<input class="inp" id="${id}" name="${f}" type="${t}" value="${esc(val)}" ${req?'required':''}>`;
-     return`<div class="fld ${t==='textarea'?'full':''}"><label for="${id}">${l}${req?' <b>*</b>':''}</label>${inp}</div>`}).join('')}</form>`+
+     return`<div class="fld ${t==='textarea'?'full':''}"><label for="${id}">${l}${req?' <b>*</b>':''}</label>${inp}${hint?`<small class="fh">${esc(hint)}</small>`:''}</div>`}).join('')}</form>`+
    (obj?`<p class="hint">ID ${esc(obj.id)}${obj.updated?' · senest ændret '+esc(fmt(obj.updated)):''}${obj.followMade?' · opfølgning er oprettet':''}</p>`:'');
   $('#dFoot').innerHTML=`<span>${obj?'<button class="btn danger" id="dDel">Slet</button>':''}</span><span class="acts"><button class="btn ghost" id="dCancel">Annullér</button><button class="btn pri" id="dSave">Gem</button></span>`;
   showDrawer();
@@ -442,8 +452,8 @@ const pk=(r,...ks)=>{for(const k of ks){const v=r[nk(k)];if(v!==undefined&&v!==n
 function xd(v){if(v===''||v==null)return'';if(typeof v==='number'){const p=XLSX.SSF.parse_date_code(v);return p?iso(p.y,p.m,p.d):''}if(v instanceof Date)return iso(v.getFullYear(),v.getMonth()+1,v.getDate());
   const t=String(v).trim();let m=t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);if(m)return iso(+m[1],+m[2],+m[3]);m=t.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/);return m?iso(+m[3],+m[2],+m[1]):''}
 const SHEETS=[
- ['item','Årshjulspunkter',['Årshjulspunkter','Årshjul','Begivenheder'],r=>({id:pk(r,'ID','Punkt-ID','Punkt ID'),title:pk(r,'Titel','Begivenhed','Navn'),type:pk(r,'Type','Kategori')||'Begivenhed',date:xd(pk(r,'Startdato','Dato','Start dato')),end:xd(pk(r,'Slutdato','Slut dato')),repeat:/årl/i.test(String(pk(r,'Gentagelse')))?'Årligt':'Engangs',area:pk(r,'Område','Sted/område','Sted'),topic:pk(r,'Emne','Tema'),owner:pk(r,'Ansvarlig','Journalist'),status:pk(r,'Status')||'Idé',priority:pk(r,'Prioritet')||'Mellem',tags:pk(r,'Tags'),follow:pk(r,'Opfølgning')||'Ingen',followMade:pk(r,'Opfølgning oprettet')==='Ja',updated:xd(pk(r,'Senest ændret')),angle:pk(r,'Journalistisk vinkel','Vinkel'),description:pk(r,'Beskrivelse')}),
-  e=>({ID:e.id,Titel:e.title,Type:e.type,Startdato:e.date,Slutdato:e.end,Måned:valid(e.date)?+e.date.slice(5,7):'',Område:e.area,Emne:e.topic,Beskrivelse:e.description,'Journalistisk vinkel':e.angle,Ansvarlig:e.owner,Status:e.status,Prioritet:e.priority,Gentagelse:e.repeat,Tags:e.tags,Opfølgning:e.follow,'Opfølgning oprettet':e.followMade?'Ja':'','Senest ændret':e.updated})],
+ ['item','Årshjulspunkter',['Årshjulspunkter','Årshjul','Begivenheder'],r=>({id:pk(r,'ID','Punkt-ID','Punkt ID'),title:pk(r,'Titel','Begivenhed','Navn'),type:pk(r,'Type','Kategori')||'Begivenhed',date:xd(pk(r,'Startdato','Dato','Start dato')),end:xd(pk(r,'Slutdato','Slut dato')),repeat:(g=>/ugedag/i.test(g)?REP[2]:/årl|hvert år|^ja/i.test(g)?REP[1]:REP[0])(String(pk(r,'Gentagelse','Årligt tilbagevendende'))),area:pk(r,'Område','Sted/område','Sted'),topic:pk(r,'Emne','Tema'),owner:pk(r,'Ansvarlig','Journalist'),status:pk(r,'Status')||'Idé',priority:pk(r,'Prioritet')||'Mellem',tags:pk(r,'Tags'),follow:pk(r,'Opfølgning')||'Ingen',followMade:pk(r,'Opfølgning oprettet')==='Ja',updated:xd(pk(r,'Senest ændret')),angle:pk(r,'Journalistisk vinkel','Vinkel'),description:pk(r,'Beskrivelse')}),
+  e=>({ID:e.id,Titel:e.title,Type:e.type,Startdato:e.date,Slutdato:e.end,Måned:valid(e.date)?+e.date.slice(5,7):'',Område:e.area,Emne:e.topic,Beskrivelse:e.description,'Journalistisk vinkel':e.angle,Ansvarlig:e.owner,Status:e.status,Prioritet:e.priority,Gentagelse:isRep(e)?(repWeekday(e)?'Årligt, samme ugedag':'Årligt'):'',Tags:e.tags,Opfølgning:e.follow,'Opfølgning oprettet':e.followMade?'Ja':'','Senest ændret':e.updated})],
  ['person','Personligheder',['Personligheder','Personer'],r=>({id:pk(r,'Person-ID','Person ID','ID'),name:pk(r,'Navn'),birth:xd(pk(r,'Fødselsdato','Fødsels dato')),known:pk(r,'Kendt for','Stilling'),local:pk(r,'Lokal tilknytning','Område'),status:pk(r,'Status')||'Aktiv'}),
   e=>({'Person-ID':e.id,Navn:e.name,Fødselsdato:e.birth,'Kendt for':e.known,'Lokal tilknytning':e.local,Status:e.status})],
  ['org','Organisationer',['Organisationer'],r=>({id:pk(r,'Org-ID','Org ID','ID'),name:pk(r,'Navn'),type:pk(r,'Type'),opened:xd(pk(r,'Grundlagt/åbnet','Grundlagt eller åbnet','Åbningsdato')),area:pk(r,'Område'),address:pk(r,'Adresse'),description:pk(r,'Beskrivelse'),follow:pk(r,'Opfølgning')||'Ingen',followMade:pk(r,'Opfølgning oprettet')==='Ja'}),
