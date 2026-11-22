@@ -126,7 +126,7 @@ table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-bl
 <body>
 <div class="app">
 <aside class="side">
-  <div class="brand"><svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><g fill="none" stroke-width="6"><path d="M17 4a13 13 0 0 1 13 13" stroke="#7fa9d6"/><path d="M30 17a13 13 0 0 1-13 13" stroke="#86c76b"/><path d="M17 30A13 13 0 0 1 4 17" stroke="#e9bd4c"/><path d="M4 17A13 13 0 0 1 17 4" stroke="#e38a52"/></g><path d="M17 17 25 8" stroke="#ff7a57" stroke-width="2.2" stroke-linecap="round"/><circle cx="17" cy="17" r="2.4" fill="#fff"/></svg><div><b>Redaktionens hukommelse</b><span>Version 2.14 | Udviklet af RH 🤓</span></div></div>
+  <div class="brand"><svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><g fill="none" stroke-width="6"><path d="M17 4a13 13 0 0 1 13 13" stroke="#7fa9d6"/><path d="M30 17a13 13 0 0 1-13 13" stroke="#86c76b"/><path d="M17 30A13 13 0 0 1 4 17" stroke="#e9bd4c"/><path d="M4 17A13 13 0 0 1 17 4" stroke="#e38a52"/></g><path d="M17 17 25 8" stroke="#ff7a57" stroke-width="2.2" stroke-linecap="round"/><circle cx="17" cy="17" r="2.4" fill="#fff"/></svg><div><b>Redaktionens hukommelse</b><span>Version 2.15 | Udviklet af RH 🤓</span></div></div>
   <nav class="nav" id="nav"></nav>
   <button class="sync warn" id="sync" title="Dropbox-indstillinger: filsti og forbindelse">Forbinder…</button>
 </aside>
@@ -665,23 +665,17 @@ async function planSave(){const v=id=>$(id).value.trim();
   closeEditor();render();toast(`${dates.length} ${dates.length===1?'møde':'møder'} oprettet`)}
 function openSettings(){
   editing=null;$('#dTitle').textContent='Dropbox';
-  $('#dBody').innerHTML=`<p><b>${tok?'Forbundet':'Ikke forbundet'}</b> · ${esc(syncText())}</p>
+  $('#dBody').innerHTML=`<p style="margin:0 0 14px"><b>${esc(syncText())}</b></p>
   <form class="form" id="sform">
-   <div class="fld full"><label for="sKey">Dropbox App key</label><input class="inp" id="sKey" value="${esc(appKey())}" ${DROPBOX_APP_KEY?'readonly':''} placeholder="fx abc123xyz"></div>
+   ${DROPBOX_APP_KEY?'':`<div class="fld full"><label for="sKey">Dropbox App key</label><input class="inp" id="sKey" value="${esc(appKey())}"></div>`}
    <div class="fld full"><label for="sPath">Sti til Excel-filen i Dropbox</label><input class="inp" id="sPath" value="${esc(cfg.path)}" placeholder="/Redaktion/Redaktionelt_Aarshjul.xlsx"></div>
   </form>
   <p class="hint">Stien skal starte med / og pege på en fil i en mappe, som alle på redaktionen har adgang til. Findes filen ikke, opretter appen den.</p>
-  <h3 style="font-size:17px;margin:22px 0 8px">Første opsætning (én gang for hele redaktionen)</h3>
-  <ol style="padding-left:20px;margin:0;font-size:15px">
-   <li>Gå til dropbox.com/developers/apps og vælg <b>Create app</b> → <b>Scoped access</b> → <b>Full Dropbox</b>.</li>
-   <li>Under <b>Permissions</b>: slå <b>files.content.read</b> og <b>files.content.write</b> til, og tryk <b>Submit</b>.</li>
-   <li>Under <b>Settings → OAuth 2 → Redirect URIs</b> tilføjes præcis denne adresse:<br><code style="display:block;margin:6px 0;padding:8px;background:var(--panel);border-radius:4px">${esc(redirectUri())}</code></li>
-   <li>Kopiér <b>App key</b> ind i feltet ovenfor. Kan kolleger ikke forbinde, fordi appen har nået Dropbox' brugergrænse for udviklingsapps, skal I søge om <b>Production status</b> under Settings.</li>
-  </ol>`;
+  `;
   $('#dFoot').innerHTML=`<span>${tok?'<button class="btn danger" id="sOff">Afbryd forbindelse</button>':''}</span><span class="acts">${tok?'<button class="btn ghost" id="sSync">Synkronisér nu</button>':''}<button class="btn pri" id="sSave">${tok?'Gem':'Gem og forbind'}</button></span>`;
   showDrawer()}
 function saveSettings(){
-  const key=$('#sKey').value.trim();let p=$('#sPath').value.trim();if(p&&!p.startsWith('/'))p='/'+p;
+  const key=$('#sKey')?$('#sKey').value.trim():cfg.appKey;let p=$('#sPath').value.trim();if(p&&!p.startsWith('/'))p='/'+p;
   if(!p||!/\.xlsx$/i.test(p)){toast('Stien skal ende på .xlsx',1);return}
   const changed=p!==cfg.path;cfg={appKey:key,path:p};LS.set('aarshjul-cfg',cfg);
   if(changed){rev=null;if(tok)pending=new Map([...entries].concat([...pending]))}
