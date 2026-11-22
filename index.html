@@ -213,7 +213,7 @@ const KINDS={
 const VIEWS=[['oversigt','Overblik'],['aarshjul','Årshjul'],...Object.entries(KINDS).map(([k,K])=>[K.view,K.label,k])];
 
 /* ---------- data: lokal cache + Dropbox ---------- */
-const DROPBOX_APP_KEY=''; // ← indsæt jeres Dropbox "App key" her. Den er ikke hemmelig.
+const DROPBOX_APP_KEY='iqiy8fuwco3ga6e'; // Dropbox App key (ikke hemmelig)
 const LS={get:(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del:k=>{try{localStorage.removeItem(k)}catch(e){}}};
 const safe=s=>String(s).replace(/[^A-Za-z0-9_.~:@+-]/g,'_').slice(0,150)||'x';
 const keyOf=e=>e.kind+'~'+safe(e.id);
