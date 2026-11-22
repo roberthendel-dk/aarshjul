@@ -95,7 +95,7 @@ textarea.inp{padding:10px 12px;min-height:96px;resize:vertical;width:100%}
 .table tbody tr:last-child td{border-bottom:0}
 .table tbody tr{cursor:pointer}.table tbody tr:hover td{background:color-mix(in srgb,var(--panel) 60%,transparent)}
 .table td.d{white-space:nowrap;font-variant-numeric:tabular-nums}.table td b{font-weight:700}
-.table .chips{margin-top:0}.nw{white-space:nowrap}.agl{display:flex;align-items:center;justify-content:center;text-decoration:none;margin-bottom:14px;color:var(--blue);border-color:color-mix(in srgb,var(--blue) 35%,var(--line))}.table a{color:var(--blue);font-weight:600}
+.table .chips{margin-top:0}.th{all:unset;cursor:pointer;display:inline-flex;gap:5px;align-items:center;font:inherit;color:inherit;border-radius:4px}.th:hover{color:var(--ink)}.th span{font-size:11px;opacity:.5}th[aria-sort=ascending] .th,th[aria-sort=descending] .th{color:var(--ink)}th[aria-sort=ascending] .th span,th[aria-sort=descending] .th span{opacity:1;color:var(--blue)}.th:focus-visible{outline:3px solid var(--blue)}#rSort{display:none}.nw{white-space:nowrap}.agl{display:flex;align-items:center;justify-content:center;text-decoration:none;margin-bottom:14px;color:var(--blue);border-color:color-mix(in srgb,var(--blue) 35%,var(--line))}.table a{color:var(--blue);font-weight:600}
 .scrim{position:fixed;inset:0;background:rgb(10 20 30/.35);z-index:20;opacity:0;pointer-events:none;transition:opacity .2s}.scrim.on{opacity:1;pointer-events:auto}
 .drawer{position:fixed;top:0;right:0;bottom:0;width:min(580px,100%);background:var(--bg);z-index:21;transform:translateX(102%);transition:transform .25s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;box-shadow:-20px 0 50px rgb(10 20 30/.18)}
 .drawer.on{transform:none}
@@ -118,7 +118,7 @@ textarea.inp{padding:10px 12px;min-height:96px;resize:vertical;width:100%}
 code{background:var(--panel)!important}
 @media(max-width:1180px){.horizon{grid-template-columns:repeat(2,minmax(0,1fr))}.wheel{grid-template-columns:1fr}.fig{max-width:540px}}
 @media(max-width:860px){.app{grid-template-columns:1fr}.side{position:static;height:auto;padding:12px;gap:10px}.brand{padding:0 4px}.nav{display:flex;overflow-x:auto;gap:4px;padding-bottom:4px}.nav a{flex:none}.nav a:nth-child(2){margin:0}.nav i{display:none}.sync{margin:0}}
-@media(max-width:600px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.kpi:nth-child(3){border-left:0}.kpi:nth-child(n+3){border-top:1px solid var(--line)}.horizon,.grid2,.form{grid-template-columns:1fr}.top{position:static}.months{grid-template-columns:repeat(4,minmax(0,1fr))}#btnImport,#btnExport{display:none}
+@media(max-width:600px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.kpi:nth-child(3){border-left:0}.kpi:nth-child(n+3){border-top:1px solid var(--line)}.horizon,.grid2,.form{grid-template-columns:1fr}.top{position:static}.months{grid-template-columns:repeat(4,minmax(0,1fr))}#btnImport,#btnExport{display:none}#rSort{display:block;flex:1}
 table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px;border-bottom:1px solid var(--line)}.stack td{display:flow-root;border:0!important;padding:3px 0;padding-inline-start:8em;text-align:start}.stack td::before{content:attr(data-l);float:inline-start;width:7.5em;margin-inline-start:-8em;color:var(--muted)}.stack td:empty{display:none}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -126,7 +126,7 @@ table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-bl
 <body>
 <div class="app">
 <aside class="side">
-  <div class="brand"><svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><g fill="none" stroke-width="6"><path d="M17 4a13 13 0 0 1 13 13" stroke="#7fa9d6"/><path d="M30 17a13 13 0 0 1-13 13" stroke="#86c76b"/><path d="M17 30A13 13 0 0 1 4 17" stroke="#e9bd4c"/><path d="M4 17A13 13 0 0 1 17 4" stroke="#e38a52"/></g><path d="M17 17 25 8" stroke="#ff7a57" stroke-width="2.2" stroke-linecap="round"/><circle cx="17" cy="17" r="2.4" fill="#fff"/></svg><div><b>Redaktionens hukommelse</b><span>Version 2.7 | Udviklet af RH 🤓</span></div></div>
+  <div class="brand"><svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><g fill="none" stroke-width="6"><path d="M17 4a13 13 0 0 1 13 13" stroke="#7fa9d6"/><path d="M30 17a13 13 0 0 1-13 13" stroke="#86c76b"/><path d="M17 30A13 13 0 0 1 4 17" stroke="#e9bd4c"/><path d="M4 17A13 13 0 0 1 17 4" stroke="#e38a52"/></g><path d="M17 17 25 8" stroke="#ff7a57" stroke-width="2.2" stroke-linecap="round"/><circle cx="17" cy="17" r="2.4" fill="#fff"/></svg><div><b>Redaktionens hukommelse</b><span>Version 2.8 | Udviklet af RH 🤓</span></div></div>
   <nav class="nav" id="nav"></nav>
   <button class="sync warn" id="sync" title="Dropbox-indstillinger: filsti og forbindelse">Forbinder…</button>
 </aside>
@@ -172,7 +172,7 @@ table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-bl
     </section>
 
     <section class="view" id="v-register">
-      <div class="filters"><input class="inp" id="rSearch" placeholder="Søg" style="flex:1;min-width:200px"><button class="btn" id="rPlan" hidden>Opret mødeplan</button><button class="btn pri" id="rNew">+ Opret</button></div>
+      <div class="filters"><input class="inp" id="rSearch" placeholder="Søg" style="flex:1;min-width:200px"><select class="inp" id="rSort" aria-label="Sortér"></select><button class="btn" id="rPlan" hidden>Opret mødeplan</button><button class="btn pri" id="rNew">+ Opret</button></div>
       <div id="rBody"></div>
     </section>
   </div>
@@ -484,12 +484,20 @@ function renderWheel(){
 
 /* ---------- registers ---------- */
 let curView='oversigt';
+const sortState={};
+function sortVal({e,n},f,kind){
+  if(f==='_date')return(n?n.date:e.date)||'';if(f==='_next')return n?n.date:'';if(f==='_agenda')return e.agenda||'';
+  if(f==='_item'){const it=refEntry(e.itemId);return it?it.title:''}if(f==='_rep')return repText(e);if(f==='_link')return e.url||e.link||'';
+  if(f==='_cov')return'';if(f==='status'&&n&&n.year)return n.status||'';return String(e[f]??'')}
 function renderRegister(){
   const kind=VIEWS.find(v=>v[0]===curView)?.[2];if(!kind)return;const K=KINDS[kind];
   const q=$('#rSearch').value.trim().toLowerCase();
   let rows=all(kind).map(e=>{const n=['person','org','anniversary'].includes(kind)||(kind==='item'&&isRep(e))?nextOf(e):null;return{e,n}}).filter(({e})=>!q||JSON.stringify(e).toLowerCase().includes(q));
   const s=K.sort;
   rows.sort((a,b)=>{if(!s)return K.name(a.e).localeCompare(K.name(b.e),'da');if(s==='_nextDate')return(a.n?.date||'9999').localeCompare(b.n?.date||'9999');if(kind==='item')return((a.n||a.e).date||'9999').localeCompare((b.n||b.e).date||'9999');if(s==='-date')return(b.e.date||'').localeCompare(a.e.date||'');return(a.e[s]||'9999').localeCompare(b.e[s]||'9999')});
+  const ss=sortState[kind],sortable=c=>c[0]!=='_cov';
+  if(ss){const c=K.cols[ss.i];rows.sort((a,b)=>{const x=sortVal(a,c[0],kind),y=sortVal(b,c[0],kind);if(!x&&!y)return 0;if(!x)return 1;if(!y)return-1;return(ss.dir==='asc'?1:-1)*x.localeCompare(y,'da',{numeric:true})})}
+  const rs=$('#rSort');rs.innerHTML='<option value="">Standardsortering</option>'+K.cols.map((c,i)=>sortable(c)?`<option value="${i}:asc" ${ss&&ss.i===i&&ss.dir==='asc'?'selected':''}>${c[1]}, stigende</option><option value="${i}:desc" ${ss&&ss.i===i&&ss.dir==='desc'?'selected':''}>${c[1]}, faldende</option>`:'').join('');
   const cell=(e,n,[f,,t])=>{
     if(f==='_date'){const d=n?n.date:e.date,dur=valid(e.end)&&e.end>e.date?diff(e.date,e.end):0;return esc(dur?span(d,addDays(d,dur)):fmt(d))}
     if(f==='_rep')return esc(repText(e));
@@ -500,7 +508,7 @@ function renderRegister(){
     if(f==='_next')return n?esc(kind==='person'?`${n.age} år · ${fmt(n.date)}`:`${n.years} år · ${fmt(n.date)}`):'';
     if(f==='_link'){const u=e.url||e.link;return/^https?:\/\//i.test(u||'')?`<a href="${esc(u)}" target="_blank" rel="noopener">Åbn</a>`:''}
     if(t==='d')return esc(fmt(e[f]));if(t==='t')return esc(String(e[f]||'').replace(':','.'));if(t==='b')return`<b>${esc(e[f])}</b>`;return esc(e[f])};
-  $('#rBody').innerHTML=rows.length?`<div class="regcard"><table class="table stack"><thead><tr>${K.cols.map(c=>`<th>${c[1]}</th>`).join('')}</tr></thead><tbody>${rows.map(({e,n})=>`<tr data-key="${esc(keyOf(e))}"${n&&n.year?` data-y="${n.year}"`:''} tabindex="0">${K.cols.map(c=>`<td class="${c[2]==='d'||c[0]==='_date'?'d':''}">${cell(e,n,c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div><p class="hint">${rows.length} ${rows.length===1?K.one:(K.many||K.label.toLowerCase().replace(/^alle /,''))}</p>`
+  $('#rBody').innerHTML=rows.length?`<div class="regcard"><table class="table stack"><thead><tr>${K.cols.map((c,i)=>sortable(c)?`<th aria-sort="${ss&&ss.i===i?(ss.dir==='asc'?'ascending':'descending'):'none'}"><button type="button" class="th" data-sort="${i}">${c[1]}<span aria-hidden="true">${ss&&ss.i===i?(ss.dir==='asc'?'↑':'↓'):'↕'}</span></button></th>`:`<th>${c[1]}</th>`).join('')}</tr></thead><tbody>${rows.map(({e,n})=>`<tr data-key="${esc(keyOf(e))}"${n&&n.year?` data-y="${n.year}"`:''} tabindex="0">${K.cols.map(c=>`<td data-l="${esc(c[1])}" class="${c[2]==='d'||c[0]==='_date'?'d':''}">${cell(e,n,c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div><p class="hint">${rows.length} ${rows.length===1?K.one:(K.many||K.label.toLowerCase().replace(/^alle /,''))}</p>`
     :`<div class="empty">${q?'Ingen match på søgningen.':`Ingen ${K.label.toLowerCase()} endnu. Opret den første, eller importér fra Excel.`}</div>`;
 }
 
@@ -692,6 +700,7 @@ document.addEventListener('click',e=>{
   else if(id==='sSync'){closeEditor();syncNow()}
   else if(id==='sOff'){disconnect();closeEditor()}
   else if(id==='dSave')saveEditor();
+  else if(e.target.closest('[data-sort]')){const i=+e.target.closest('[data-sort]').dataset.sort,k=VIEWS.find(v=>v[0]===curView)?.[2],cur=sortState[k];sortState[k]={i,dir:cur&&cur.i===i&&cur.dir==='asc'?'desc':'asc'};renderRegister()}
   else if(id==='rPlan')openPlan();
   else if(id==='pAdd'){$('#pdates').insertAdjacentHTML('beforeend',pRow());$('#pdates .yr:last-child input').focus()}
   else if(id==='pFill')planFill();
@@ -715,7 +724,7 @@ $('#file').onchange=e=>{const f=e.target.files[0];e.target.value='';if(f)readFil
 $('#btnExport').onclick=doExport;
 $('#yPrev').onclick=()=>{wYear--;renderWheel()};$('#yNext').onclick=()=>{wYear++;renderWheel()};
 $('#yNow').onclick=()=>{wYear=+today().slice(0,4);wMonth=+today().slice(5,7);renderWheel()};
-$('#wSearch').oninput=renderWheel;$('#rSearch').oninput=renderRegister;$('#fGroup').onchange=renderDash;$('#fArea').onchange=renderDash;
+$('#wSearch').oninput=renderWheel;$('#rSearch').oninput=renderRegister;$('#rSort').onchange=e=>{const k=VIEWS.find(v=>v[0]===curView)?.[2],v=e.target.value;if(!v)delete sortState[k];else{const[i,dir]=v.split(':');sortState[k]={i:+i,dir}}renderRegister()};$('#fGroup').onchange=renderDash;$('#fArea').onchange=renderDash;
 $('#fGroup').innerHTML+=Object.entries(GROUPS).map(([k,[l]])=>`<option value="${k}">${l}</option>`).join('');
 const wheelRO=new ResizeObserver(()=>{if(curView==='aarshjul')renderWheel()});wheelRO.observe($('#fig'));
 window.addEventListener('hashchange',route);
